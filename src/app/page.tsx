@@ -1,8 +1,23 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Moon, Sun, Bell } from "lucide-react"
+import { useState } from "react"
 
 export default function Home() {
+  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [isSubscribePopoverOpen, setIsSubscribePopoverOpen] = useState(false)
+  const [isThemePopoverOpen, setIsThemePopoverOpen] = useState(false)
+
+  const handleToggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode)
+    // 실제 다크모드 토글 로직은 여기에 추가할 수 있습니다
+    document.documentElement.classList.toggle('dark')
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header Navigation */}
@@ -20,7 +35,7 @@ export default function Home() {
               홈
             </a>
             <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-              글
+              블로그
             </a>
             <a href="#" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               소개
@@ -31,12 +46,66 @@ export default function Home() {
           </nav>
           
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm">
-              다크모드
-            </Button>
-            <Button size="sm">
-              구독하기
-            </Button>
+            <Popover open={isSubscribePopoverOpen} onOpenChange={setIsSubscribePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  aria-label="알림 구독"
+                  className="h-9 w-9 p-0"
+                  onMouseEnter={() => setIsSubscribePopoverOpen(true)}
+                  onMouseLeave={() => setIsSubscribePopoverOpen(false)}
+                >
+                  <Bell className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent 
+                className="w-80"
+                onMouseEnter={() => setIsSubscribePopoverOpen(true)}
+                onMouseLeave={() => setIsSubscribePopoverOpen(false)}
+              >
+                <div className="space-y-2">
+                  <h4 className="font-medium leading-none">알림 구독</h4>
+                  <p className="text-sm text-muted-foreground">
+                    새로운 블로그 포스트가 올라올 때마다 알림을 받아보세요!
+                  </p>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Popover open={isThemePopoverOpen} onOpenChange={setIsThemePopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleToggleDarkMode}
+                  aria-label={isDarkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}
+                  className="h-9 w-9 p-0"
+                  onMouseEnter={() => setIsThemePopoverOpen(true)}
+                  onMouseLeave={() => setIsThemePopoverOpen(false)}
+                >
+                  {isDarkMode ? (
+                    <Sun className="h-4 w-4" />
+                  ) : (
+                    <Moon className="h-4 w-4" />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent 
+                className="w-80"
+                onMouseEnter={() => setIsThemePopoverOpen(true)}
+                onMouseLeave={() => setIsThemePopoverOpen(false)}
+              >
+                <div className="space-y-2">
+                  <h4 className="font-medium leading-none">테마 변경</h4>
+                  <p className="text-sm text-muted-foreground">
+                    현재 모드: {isDarkMode ? "다크 모드" : "라이트 모드"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    클릭하여 {isDarkMode ? "라이트" : "다크"} 모드로 변경하세요.
+                  </p>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </header>
@@ -55,7 +124,7 @@ export default function Home() {
               개발 경험과 인사이트를 공유합니다.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="text-base px-8">
+              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 text-base px-8">
                 최신 글 보기
               </Button>
               <Button variant="outline" size="lg" className="text-base px-8">
@@ -78,8 +147,15 @@ export default function Home() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Featured Post 1 */}
-            <Card className="group hover:shadow-lg transition-all duration-300 border-border/50">
-              <CardHeader className="pb-4">
+            <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden p-0 cursor-pointer">
+              <div className="relative h-48 w-full overflow-hidden bg-muted animate-pulse flex items-center justify-center">
+                <div className="text-muted-foreground">
+                  <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              <CardHeader className="p-6 pb-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
                   <span>2024.01.15</span>
                   <span>•</span>
@@ -95,10 +171,10 @@ export default function Home() {
                   실제 프로젝트에 어떻게 적용할 수 있는지 알아봅니다.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-6 pb-6">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">5분 읽기</span>
-                  <Button variant="ghost" size="sm" className="text-accent hover:text-accent">
+                  <Button variant="ghost" size="sm" className="text-accent hover:text-white hover:bg-accent">
                     읽기 →
                   </Button>
                 </div>
@@ -106,8 +182,15 @@ export default function Home() {
             </Card>
 
             {/* Featured Post 2 */}
-            <Card className="group hover:shadow-lg transition-all duration-300 border-border/50">
-              <CardHeader className="pb-4">
+            <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden p-0 cursor-pointer">
+              <div className="relative h-48 w-full overflow-hidden bg-muted animate-pulse flex items-center justify-center">
+                <div className="text-muted-foreground">
+                  <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              <CardHeader className="p-6 pb-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
                   <span>2024.01.12</span>
                   <span>•</span>
@@ -123,10 +206,10 @@ export default function Home() {
                   더 안전하고 표현력 있는 코드를 작성하는 방법을 소개합니다.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-6 pb-6">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">8분 읽기</span>
-                  <Button variant="ghost" size="sm" className="text-accent hover:text-accent">
+                  <Button variant="ghost" size="sm" className="text-accent hover:text-white hover:bg-accent">
                     읽기 →
                   </Button>
                 </div>
@@ -134,8 +217,15 @@ export default function Home() {
             </Card>
 
             {/* Featured Post 3 */}
-            <Card className="group hover:shadow-lg transition-all duration-300 border-border/50">
-              <CardHeader className="pb-4">
+            <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden p-0 cursor-pointer">
+              <div className="relative h-48 w-full overflow-hidden bg-muted animate-pulse flex items-center justify-center">
+                <div className="text-muted-foreground">
+                  <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+              <CardHeader className="p-6 pb-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
                   <span>2024.01.10</span>
                   <span>•</span>
@@ -151,10 +241,10 @@ export default function Home() {
                   우리 프로젝트에 적용할 수 있는 인사이트를 정리했습니다.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-6 pb-6">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">6분 읽기</span>
-                  <Button variant="ghost" size="sm" className="text-accent hover:text-accent">
+                  <Button variant="ghost" size="sm" className="text-accent hover:text-white hover:bg-accent">
                     읽기 →
                   </Button>
                 </div>
