@@ -40,3 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .mcp.json
+
+# YoYo AI version control directory
+.yoyo/
+
+# vscode
+.vscode

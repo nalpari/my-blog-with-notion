@@ -13,16 +13,19 @@ Linear.app에서 영감을 받은 모던하고 미니멀한 개발자 블로그�
 ## 🛠 기술 스택
 
 ### Core
+
 - **[Next.js 15.4.5](https://nextjs.org/)** - React 프레임워크
 - **[React 19.1.0](https://react.dev/)** - UI 라이브러리
 - **[TypeScript 5](https://www.typescriptlang.org/)** - 타입 안정성
 
 ### Styling
+
 - **[Tailwind CSS 3.4](https://tailwindcss.com/)** - 유틸리티 기반 CSS 프레임워크
 - **[shadcn/ui](https://ui.shadcn.com/)** - 재사용 가능한 컴포넌트 라이브러리
 - **[tailwindcss-animate](https://github.com/jamiebuilds/tailwindcss-animate)** - 애니메이션 유틸리티
 
 ### UI Components
+
 - **[Radix UI](https://www.radix-ui.com/)** - 접근성이 뛰어난 헤드리스 UI 컴포넌트
 - **[Lucide React](https://lucide.dev/)** - 아름다운 오픈소스 아이콘 라이브러리
 - **[class-variance-authority](https://cva.style/)** - 컴포넌트 변형 관리
@@ -31,6 +34,7 @@ Linear.app에서 영감을 받은 모던하고 미니멀한 개발자 블로그�
 ## 📦 설치 및 실행
 
 ### 사전 요구사항
+
 - Node.js 18.17 이상
 - npm, yarn, pnpm, 또는 bun
 
@@ -101,7 +105,7 @@ my-blog-with-notion/
 - **Background**: 라이트 (`#f8f9fa`) / 다크 (`#08090a`)
 - **Foreground**: 라이트 (`#08090a`) / 다크 (`#f7f8f8`)
 - **Muted**: 라이트 (`#f1f3f4`) / 다크 (`#32343a`)
-- **Accent Colors**: 
+- **Accent Colors**:
   - Blue (`#4ea7fc`)
   - Red (`#eb5757`)
   - Green (`#4cb782`)
