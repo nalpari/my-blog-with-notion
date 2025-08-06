@@ -16,6 +16,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 
 // 포스트 카드 컴포넌트
 function PostCard({ post }: { post: Post }) {
+  console.log(post)
   const formatDate = (dateString: string) => {
     return new Date(dateString)
       .toLocaleDateString('ko-KR', {
