@@ -1,0 +1,149 @@
+{
+  "page_structure": {
+    "title": "Beginner's Guide to Personal Finance Management",
+    "layout": {
+      "container": {
+        "max_width": "2xl",
+        "margin": "auto",
+        "responsive": true
+      },
+      "main_wrapper": {
+        "margin_top": {
+          "default": "16",
+          "large": "32"
+        },
+        "position": {
+          "xl": "relative"
+        }
+      }
+    }
+  },
+  "typography": {
+    "main_heading": {
+      "element": "h1",
+      "font_size": {
+        "default": "4xl",
+        "small": "5xl"
+      },
+      "font_weight": "bold",
+      "letter_spacing": "tight",
+      "colors": {
+        "light": "zinc-800",
+        "dark": "zinc-100"
+      },
+      "margin_top": "6"
+    },
+    "date_element": {
+      "element": "time",
+      "font_size": "base",
+      "colors": {
+        "light": "zinc-400",
+        "dark": "zinc-500"
+      },
+      "display": "flex",
+      "align_items": "center",
+      "order": "first"
+    },
+    "content_prose": {
+      "classes": "prose prose-sm",
+      "margin_top": "8",
+      "attribute": "data-mdx-content"
+    }
+  },
+  "visual_elements": {
+    "date_separator": {
+      "element": "span",
+      "height": "4",
+      "width": "0.5",
+      "border_radius": "full",
+      "background": {
+        "light": "zinc-200",
+        "dark": "zinc-500"
+      }
+    },
+    "date_text": {
+      "element": "span",
+      "margin_left": "3"
+    }
+  },
+  "color_scheme": {
+    "text_colors": {
+      "primary": {
+        "light": "zinc-800",
+        "dark": "zinc-100"
+      },
+      "secondary": {
+        "light": "zinc-400",
+        "dark": "zinc-500"
+      }
+    },
+    "background_colors": {
+      "separator": {
+        "light": "zinc-200",
+        "dark": "zinc-500"
+      }
+    },
+    "theme_support": "dark_mode_enabled"
+  },
+  "layout_structure": {
+    "article_wrapper": {
+      "element": "article",
+      "contains": ["header", "content"]
+    },
+    "header_section": {
+      "element": "header",
+      "display": "flex",
+      "flex_direction": "column",
+      "contains": ["title", "date"]
+    },
+    "content_section": {
+      "element": "div",
+      "margin_top": "8",
+      "prose_styling": true
+    }
+  },
+  "responsive_design": {
+    "breakpoints": {
+      "sm": "small screens",
+      "lg": "large screens",
+      "xl": "extra large screens"
+    },
+    "responsive_features": [
+      "adaptive_margins",
+      "responsive_font_sizes",
+      "flexible_layout"
+    ]
+  },
+  "framework_details": {
+    "frontend": "Next.js",
+    "styling": "Tailwind CSS",
+    "components": {
+      "router": "next/navigation",
+      "blog_layout": "custom_component"
+    }
+  },
+  "content_structure": {
+    "main_sections": [
+      {
+        "type": "heading",
+        "content": "Changelog for 2024"
+      },
+      {
+        "type": "heading",
+        "content": "Lorem ipsum heading"
+      },
+      {
+        "type": "paragraph",
+        "content": "Lorem ipsum content blocks"
+      }
+    ],
+    "content_pattern": "multiple_sections_with_headings_and_paragraphs"
+  },
+  "design_patterns": {
+    "layout_pattern": "centered_single_column",
+    "typography_hierarchy": "clear_heading_structure",
+    "spacing_system": "consistent_tailwind_spacing",
+    "color_system": "zinc_color_palette",
+    "responsive_approach": "mobile_first"
+  }
+}

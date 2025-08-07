@@ -1,7 +1,8 @@
 # TODO:
 
-- [x] 1: 현재 발생하는 오류 확인 및 로그 분석 (priority: High)
-- [x] 2: next.config.ts에 Notion 이미지 도메인 추가 (priority: High)
-- [x] 3: transformNotionPageToPost 함수의 coverImage 변환 로직 확인 (priority: High)
-- [x] 4: Notion API 응답 구조와 타입 정의 일치 여부 확인 (priority: Medium)
-- [x] 5: 디버깅 로그 제거 및 최종 테스트 (priority: Medium)
+- [x] 1: 메인 페이지(src/app/page.tsx)에서 Hero Section 삭제 (priority: High)
+- [x] 2: 메인 페이지(src/app/page.tsx)에서 Newsletter Section 삭제 (priority: High)
+- [x] 3: 헤더 컴포넌트(src/components/header.tsx)에서 네비게이션 메뉴 삭제 (priority: High)
+- [x] 4: 푸터 컴포넌트(src/components/footer.tsx)에서 카테고리 섹션 삭제 (priority: High)
+- [x] 5: 푸터 컴포넌트(src/components/footer.tsx)에서 링크 섹션 삭제 (priority: High)
+- [x] 6: 삭제 후 레이아웃 확인 및 미리보기 (priority: Medium)
