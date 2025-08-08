@@ -1,5 +1,5 @@
 import React from 'react'
 
 export default function Sample() {
-  return <div>sample</div>
+  return <div>sample12342134</div>
 }
