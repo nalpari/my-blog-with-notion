@@ -14,7 +14,21 @@ export const Header = () => {
           <span className="font-semibold text-lg">Blog</span>
         </Link>
 
-
+        {/* 네비게이션 메뉴 */}
+        <nav className="hidden md:flex items-center space-x-6">
+          <Link 
+            href="/" 
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            홈
+          </Link>
+          <Link 
+            href="/posts" 
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            포스트
+          </Link>
+        </nav>
 
         <ThemeToggle />
       </div>
