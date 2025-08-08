@@ -147,21 +147,72 @@ function transformNotionPageToPost(page: NotionPage): Post {
 }
 
 /**
- * 노션 데이터베이스에서 게시된 포스트 목록 가져오기
+ * 노션 데이터베이스에서 게시된 포스트 목록 가져오기 (필터링 및 페이지네이션 지원)
  */
 export async function getPublishedPosts(
   limit: number = 10,
   startCursor?: string,
+  searchQuery?: string,
+  category?: string,
 ): Promise<NotionDatabaseResponse> {
   try {
-    const response = await notion.databases.query({
-      database_id: DATABASE_ID,
-      filter: {
+    // 기본 필터: Published 상태인 포스트만
+    type NotionFilter = {
+      property?: string
+      select?: { equals: string }
+      title?: { contains: string }
+      rich_text?: { contains: string }
+      or?: NotionFilter[]
+      and?: NotionFilter[]
+    }
+    
+    const filters: NotionFilter[] = [
+      {
         property: 'status',
         select: {
           equals: 'Published',
         },
       },
+    ]
+
+    // 검색어 필터 추가 (제목과 요약 모두 검색)
+    if (searchQuery) {
+      filters.push({
+        or: [
+          {
+            property: 'title',
+            title: {
+              contains: searchQuery,
+            },
+          },
+          {
+            property: 'excerpt',
+            rich_text: {
+              contains: searchQuery,
+            },
+          },
+        ],
+      })
+    }
+
+    // 카테고리 필터 추가
+    if (category && category !== 'all') {
+      filters.push({
+        property: 'category',
+        select: {
+          equals: category,
+        },
+      })
+    }
+
+    // 최종 필터 구성
+    const filter = filters.length > 1 
+      ? { and: filters }
+      : filters[0]
+
+    const response = await notion.databases.query({
+      database_id: DATABASE_ID,
+      filter,
       sorts: [
         {
           property: 'publishedAt',
