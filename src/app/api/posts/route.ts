@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 			limit = 100
 		}
 		
-		// Parse page number for offset calculation
+		// Parse page number for cursor-based pagination
 		const pageParam = searchParams.get('page') || '1'
 		const page = Math.max(1, parseInt(pageParam) || 1)
 		
@@ -24,40 +24,25 @@ export async function GET(request: NextRequest) {
 		// Parse category filter
 		const category = searchParams.get('category') || ''
 		
-		// For cursor-based pagination (optional, for future use)
+		// For cursor-based pagination
 		const cursor = searchParams.get('cursor') || undefined
 		
-		// Fetch posts with filters
-		// Note: This currently fetches all posts and filters client-side
-		// In production, these filters should be applied at the database level
-		const response = await getPublishedPosts(100, cursor)
+		// Fetch posts with filters applied at the Notion API level
+		// This is much more efficient as filtering happens on the database side
+		const response = await getPublishedPosts(limit, cursor, searchQuery, category)
 		
-		// Apply filters (ideally this should be done in the Notion query)
-		let filteredPosts = response.posts
+		// Use the posts directly from the response (already filtered and paginated)
+		const paginatedPosts = response.posts
 		
-		// Search filter
-		if (searchQuery) {
-			const query = searchQuery.toLowerCase()
-			filteredPosts = filteredPosts.filter(post => 
-				post.title.toLowerCase().includes(query) ||
-				post.excerpt.toLowerCase().includes(query)
-			)
-		}
+		// For page-based navigation (approximation since Notion uses cursor-based)
+		// Note: totalPosts and totalPages are estimates for UI purposes
+		// Actual pagination should use cursor-based approach for accuracy
+		const hasMore = response.hasMore
 		
-		// Category filter
-		if (category && category !== 'all') {
-			filteredPosts = filteredPosts.filter(post => 
-				post.category?.name === category
-			)
-		}
-		
-		// Calculate pagination
-		const startIndex = (page - 1) * limit
-		const endIndex = startIndex + limit
-		const paginatedPosts = filteredPosts.slice(startIndex, endIndex)
-		const totalPosts = filteredPosts.length
+		// Since Notion API doesn't provide total count with filters,
+		// we'll use hasMore for navigation and estimate totals
+		const totalPosts = hasMore ? (page * limit) + 1 : paginatedPosts.length + ((page - 1) * limit)
 		const totalPages = Math.ceil(totalPosts / limit)
-		const hasMore = page < totalPages
 		
 		return NextResponse.json({
 			posts: paginatedPosts,
@@ -68,7 +53,8 @@ export async function GET(request: NextRequest) {
 				totalPages,
 				hasMore,
 				hasNext: hasMore,
-				hasPrevious: page > 1
+				hasPrevious: page > 1,
+				nextCursor: response.nextCursor
 			}
 		})
 	} catch (error) {
@@ -85,7 +71,7 @@ export async function GET(request: NextRequest) {
 					hasNext: false,
 					hasPrevious: false
 				},
-				error: 'Failed to fetch posts' 
+				error: '포스트를 불러오는데 실패했습니다' 
 			},
 			{ status: 500 }
 		)

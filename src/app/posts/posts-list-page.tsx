@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -258,6 +258,7 @@ export function PostsListPage() {
 	const [allCategories, setAllCategories] = useState<string[]>([])
 
 	const postsPerPage = 9
+	const abortControllerRef = useRef<AbortController | null>(null)
 
 	// Fetch posts with query parameters
 	const fetchPosts = useCallback(async (
@@ -265,6 +266,15 @@ export function PostsListPage() {
 		search: string = '',
 		category: string = 'all'
 	) => {
+		// 이전 요청이 있으면 취소
+		if (abortControllerRef.current) {
+			abortControllerRef.current.abort()
+		}
+
+		// 새로운 AbortController 생성
+		const controller = new AbortController()
+		abortControllerRef.current = controller
+
 		setLoading(true)
 		setError(null) // Clear previous errors
 		try {
@@ -275,42 +285,66 @@ export function PostsListPage() {
 				...(category !== 'all' && { category })
 			})
 
-			const response = await fetch(`/api/posts?${params}`)
+			const response = await fetch(`/api/posts?${params}`, {
+				signal: controller.signal
+			})
+			
 			if (!response.ok) {
 				throw new Error(`서버 응답 오류: ${response.status} ${response.statusText}`)
 			}
 			
 			const data: ApiResponse = await response.json()
-			setPosts(data.posts)
-			setPagination(data.pagination)
-			setError(null) // Clear error on success
+			
+			// 요청이 취소되지 않았을 때만 상태 업데이트
+			if (!controller.signal.aborted) {
+				setPosts(data.posts)
+				setPagination(data.pagination)
+				setError(null) // Clear error on success
+			}
 		} catch (error) {
+			// AbortError는 무시 (사용자가 의도적으로 취소한 경우)
+			if (error instanceof Error && error.name === 'AbortError') {
+				console.log('요청이 취소되었습니다')
+				return
+			}
+			
 			const errorMessage = error instanceof Error 
 				? error.message 
 				: '포스트를 불러오는 중 알 수 없는 오류가 발생했습니다';
 			console.error('포스트를 불러오는 중 오류가 발생했습니다:', error)
-			setError(errorMessage)
-			setPosts([])
-			setPagination({
-				page: 1,
-				limit: 9,
-				totalPosts: 0,
-				totalPages: 0,
-				hasMore: false,
-				hasNext: false,
-				hasPrevious: false
-			})
+			
+			// 요청이 취소되지 않았을 때만 에러 상태 업데이트
+			if (!controller.signal.aborted) {
+				setError(errorMessage)
+				setPosts([])
+				setPagination({
+					page: 1,
+					limit: 9,
+					totalPosts: 0,
+					totalPages: 0,
+					hasMore: false,
+					hasNext: false,
+					hasPrevious: false
+				})
+			}
 		} finally {
-			setLoading(false)
+			// 요청이 취소되지 않았을 때만 로딩 상태 업데이트
+			if (!controller.signal.aborted) {
+				setLoading(false)
+			}
 		}
 	}, [postsPerPage])
 
 	// Initial load to get all categories
 	useEffect(() => {
+		const controller = new AbortController()
+		
 		const loadInitialData = async () => {
 			try {
 				// Fetch all posts once to get categories
-				const response = await fetch('/api/posts?limit=100')
+				const response = await fetch('/api/posts?limit=100', {
+					signal: controller.signal
+				})
 				if (response.ok) {
 					const data = await response.json()
 					const uniqueCategories = Array.from(
@@ -319,6 +353,10 @@ export function PostsListPage() {
 					setAllCategories(uniqueCategories)
 				}
 			} catch (error) {
+				// AbortError는 무시
+				if (error instanceof Error && error.name === 'AbortError') {
+					return
+				}
 				console.error('카테고리 로드 중 오류:', error)
 			}
 			
@@ -327,6 +365,11 @@ export function PostsListPage() {
 		}
 
 		loadInitialData()
+
+		// cleanup 함수에서 요청 취소
+		return () => {
+			controller.abort()
+		}
 	}, [fetchPosts])
 
 	// Fetch posts when search, category, or page changes
@@ -340,6 +383,16 @@ export function PostsListPage() {
 			setCurrentPage(1)
 		}
 	}, [searchTerm, selectedCategory])
+
+	// Cleanup on unmount
+	useEffect(() => {
+		return () => {
+			// 컴포넌트 언마운트 시 진행 중인 요청 취소
+			if (abortControllerRef.current) {
+				abortControllerRef.current.abort()
+			}
+		}
+	}, [])
 
 	const handlePageChange = (page: number) => {
 		setCurrentPage(page)
