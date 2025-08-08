@@ -7,8 +7,9 @@ Linear.app에서 영감을 받은 모던하고 미니멀한 개발자 블로그�
 - **Notion CMS 통합**: Notion 데이터베이스를 사용한 블로그 포스트 관리
 - **Linear Design System**: Linear.app에서 영감을 받은 깔끔하고 세련된 디자인
 - **다크 모드 지원**: next-themes를 활용한 시스템 설정 연동 및 수동 전환
+- **태그 시스템**: 포스트별 태그 배지 표시 및 Notion 색상 매핑
 - **반응형 디자인**: 모든 디바이스에서 완벽한 레이아웃
-- **최적화된 성능**: Next.js Turbopack을 활용한 빠른 개발 환경
+- **최적화된 성능**: Next.js 15와 Static Generation으로 빠른 로딩
 - **Markdown 렌더링**: react-markdown과 syntax highlighting 지원
 - **접근성 준수**: WCAG 가이드라인을 따른 접근성 최적화
 
@@ -25,7 +26,9 @@ Linear.app에서 영감을 받은 모던하고 미니멀한 개발자 블로그�
 - **[@notionhq/client](https://github.com/makenotion/notion-sdk-js)** - Notion API 클라이언트
 - **[notion-to-md](https://github.com/souvikinator/notion-to-md)** - Notion 블록을 Markdown으로 변환
 - **[react-markdown](https://github.com/remarkjs/react-markdown)** - Markdown 렌더링
+- **[remark-gfm](https://github.com/remarkjs/remark-gfm)** - GitHub Flavored Markdown 지원
 - **[react-syntax-highlighter](https://github.com/react-syntax-highlighter/react-syntax-highlighter)** - 코드 구문 강조
+- **[prismjs](https://prismjs.com/)** - 구문 강조 테마
 
 ### Styling
 
@@ -46,7 +49,7 @@ Linear.app에서 영감을 받은 모던하고 미니멀한 개발자 블로그�
 ### 사전 요구사항
 
 - Node.js 18.17 이상
-- npm, yarn, pnpm, 또는 bun
+- pnpm (권장), npm, yarn, 또는 bun
 - Notion 계정 및 API 키
 
 ### Notion 설정
@@ -74,6 +77,12 @@ Linear.app에서 영감을 받은 모던하고 미니멀한 개발자 블로그�
 # Notion API 설정
 NOTION_TOKEN=your_notion_integration_token
 NOTION_DATABASE_ID=your_notion_database_id
+
+# ISR Revalidation Secret (선택사항)
+REVALIDATE_SECRET=your_secret_key
+
+# Next.js 설정
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 ### 설치
@@ -83,22 +92,22 @@ NOTION_DATABASE_ID=your_notion_database_id
 git clone https://github.com/nalpari/my-blog-with-notion.git
 cd my-blog-with-notion
 
-# 의존성 설치
+# 의존성 설치 (pnpm 권장)
+pnpm install
+# 또는
 npm install
 # 또는
 yarn install
-# 또는
-pnpm install
 ```
 
 ### 개발 서버 실행
 
 ```bash
+pnpm dev
+# 또는
 npm run dev
 # 또는
 yarn dev
-# 또는
-pnpm dev
 ```
 
 브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 결과를 확인하세요.
@@ -107,13 +116,16 @@ pnpm dev
 
 ```bash
 # 프로덕션 빌드
-npm run build
+pnpm build
 
 # 프로덕션 서버 실행
-npm run start
+pnpm start
 
 # 코드 품질 체크
-npm run lint
+pnpm lint
+
+# 타입 체크
+pnpm tsc --noEmit
 ```
 
 ## 📁 프로젝트 구조
@@ -137,7 +149,8 @@ my-blog-with-notion/
 │   │       ├── button.tsx
 │   │       ├── card.tsx
 │   │       ├── input.tsx
-│   │       └── popover.tsx
+│   │       ├── popover.tsx
+│   │       └── tag-badge.tsx  # 태그 배지 컴포넌트
 │   ├── lib/               # 유틸리티 함수
 │   │   ├── notion.ts      # Notion API 통합
 │   │   └── utils.ts       # 헬퍼 함수
@@ -191,7 +204,7 @@ my-blog-with-notion/
 - **Docker**: Dockerfile 작성 후 컨테이너화
 - **AWS/GCP**: SSR을 위한 서버리스 함수 설정
 
-## 🔧 주요 API 함수
+## 🔧 주요 기능 및 컴포넌트
 
 ### Notion 통합 함수 (src/lib/notion.ts)
 
@@ -200,6 +213,13 @@ my-blog-with-notion/
 - `getPostBySlug(slug)`: 슬러그로 특정 포스트 가져오기
 - `getPostBlocks(pageId)`: 포스트 콘텐츠를 Markdown으로 변환
 - `getPostsByCategory(categoryName, limit)`: 카테고리별 포스트 가져오기
+
+### 주요 컴포넌트
+
+- **PostCard**: 포스트 카드 컴포넌트 (썸네일, 제목, 요약, 태그)
+- **TagBadge/TagList**: 태그 배지 표시 컴포넌트 (Notion 색상 매핑)
+- **ThemeProvider/ThemeToggle**: 다크 모드 전환 기능
+- **Header/Footer**: 네비게이션 및 푸터 레이아웃
 
 ## 🤝 기여하기
 
