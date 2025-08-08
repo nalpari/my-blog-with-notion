@@ -1,8 +1,7 @@
 # TODO:
 
-- [x] 1: 메인 페이지(src/app/page.tsx)에서 Hero Section 삭제 (priority: High)
-- [x] 2: 메인 페이지(src/app/page.tsx)에서 Newsletter Section 삭제 (priority: High)
-- [x] 3: 헤더 컴포넌트(src/components/header.tsx)에서 네비게이션 메뉴 삭제 (priority: High)
-- [x] 4: 푸터 컴포넌트(src/components/footer.tsx)에서 카테고리 섹션 삭제 (priority: High)
-- [x] 5: 푸터 컴포넌트(src/components/footer.tsx)에서 링크 섹션 삭제 (priority: High)
-- [x] 6: 삭제 후 레이아웃 확인 및 미리보기 (priority: Medium)
+- [x] 1: PostCard 컴포넌트 구조 확인 (priority: High)
+- [x] 2: Notion 데이터에서 태그 정보 구조 확인 (priority: High)
+- [x] 3: 태그 배지 UI 컴포넌트 구현 (priority: Medium)
+- [x] 4: PostCard에 태그 배지 통합 (priority: Medium)
+- [x] 5: 태그 표시 스타일링 및 반응형 처리 (priority: Low)

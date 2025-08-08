@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { getPostBySlug, getPostBlocks, getPublishedPosts } from '@/lib/notion'
 import { Metadata } from 'next'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Header } from '@/components/header'
@@ -97,6 +98,7 @@ export default async function PostPage({ params }: PostPageProps) {
         
         <div className="mt-8 pb-[100px] prose prose-sm prose-zinc dark:prose-invert max-w-none text-zinc-600 dark:text-zinc-300 leading-7" data-mdx-content>
           <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
             components={{
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               code({ inline, className, children, ...props }: any) {
@@ -166,34 +168,34 @@ export default async function PostPage({ params }: PostPageProps) {
                 </a>
               ),
               table: ({ children }) => (
-                <div className="overflow-x-auto mb-4">
-                  <table className="min-w-full border border-zinc-300 dark:border-zinc-600 rounded-lg">
+                <div className="overflow-x-auto mb-6 rounded-lg border border-zinc-200 dark:border-zinc-700 shadow-sm">
+                  <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
                     {children}
                   </table>
                 </div>
               ),
               thead: ({ children }) => (
-                <thead className="bg-zinc-100 dark:bg-zinc-800">
+                <thead className="bg-zinc-50 dark:bg-zinc-800/50">
                   {children}
                 </thead>
               ),
               tbody: ({ children }) => (
-                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
+                <tbody className="bg-white dark:bg-zinc-900 divide-y divide-zinc-200 dark:divide-zinc-700">
                   {children}
                 </tbody>
               ),
               tr: ({ children }) => (
-                <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+                <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors">
                   {children}
                 </tr>
               ),
               th: ({ children }) => (
-                <th className="px-4 py-3 text-left text-sm font-semibold text-zinc-900 dark:text-zinc-100 border-b border-zinc-300 dark:border-zinc-600">
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                   {children}
                 </th>
               ),
               td: ({ children }) => (
-                <td className="px-4 py-3 text-sm text-zinc-600 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-700">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">
                   {children}
                 </td>
               ),

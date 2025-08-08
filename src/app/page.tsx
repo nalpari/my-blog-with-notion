@@ -6,7 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -14,6 +13,7 @@ import { getLatestPosts } from '@/lib/notion'
 import type { Post } from '@/types/notion'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
+import { TagList } from '@/components/ui/tag-badge'
 
 // 포스트 카드 컴포넌트
 function PostCard({ post }: { post: Post }) {
@@ -72,10 +72,15 @@ function PostCard({ post }: { post: Post }) {
               </>
             )}
           </div>
-          <CardTitle className="group-hover:text-accent transition-colors line-clamp-2">
+          <CardTitle className="text-lg group-hover:text-accent transition-colors line-clamp-2 overflow-hidden text-ellipsis">
             {post.title}
           </CardTitle>
-          <CardDescription className="line-clamp-3">
+          {post.tags && post.tags.length > 0 && (
+            <div className="mt-2">
+              <TagList tags={post.tags} maxTags={3} size="sm" />
+            </div>
+          )}
+          <CardDescription className="line-clamp-3 mt-2">
             {post.excerpt}
           </CardDescription>
         </CardHeader>
@@ -169,8 +174,6 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <Header />
 
-
-
       {/* Featured Posts */}
       <section className="py-12 sm:py-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -186,8 +189,6 @@ export default function Home() {
           </Suspense>
         </div>
       </section>
-
-
 
       <Footer />
     </div>
