@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -40,21 +40,21 @@ function PostCard({ post }: { post: Post }) {
 	}
 
 	return (
-		<Link href={`/posts/${post.slug}`}>
-			<Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden p-0 cursor-pointer h-full">
-				{post.coverImage && (
-					<div className="relative h-48 w-full overflow-hidden">
-						<Image
-							src={post.coverImage}
-							alt={post.title}
-							fill
-							className="object-cover group-hover:scale-105 transition-transform duration-300"
-							sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-						/>
-					</div>
-				)}
-				{!post.coverImage && (
-					<div className="relative h-48 w-full overflow-hidden bg-muted flex items-center justify-center">
+		<Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden p-0 h-full">
+			{post.coverImage && (
+				<Link href={`/posts/${post.slug}`} className="block relative h-48 w-full overflow-hidden">
+					<Image
+						src={post.coverImage}
+						alt={post.title}
+						fill
+						className="object-cover group-hover:scale-105 transition-transform duration-300"
+						sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+					/>
+				</Link>
+			)}
+			{!post.coverImage && (
+				<Link href={`/posts/${post.slug}`} className="block relative h-48 w-full overflow-hidden bg-muted">
+					<div className="flex items-center justify-center h-full">
 						<div className="text-muted-foreground">
 							<svg
 								className="w-12 h-12"
@@ -69,47 +69,52 @@ function PostCard({ post }: { post: Post }) {
 							</svg>
 						</div>
 					</div>
-				)}
-				<CardHeader className="p-6 pb-4">
-					<div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-						<span>{formatDate(post.publishedAt)}</span>
-						{post.category && (
-							<>
-								<span>•</span>
-								<span className="bg-accent/10 text-accent px-2 py-1 rounded-md text-xs font-medium">
-									{post.category.name}
-								</span>
-							</>
-						)}
-					</div>
-					<CardTitle className="text-lg group-hover:text-accent transition-colors line-clamp-2 overflow-hidden text-ellipsis">
-						{post.title}
-					</CardTitle>
-					{post.tags && post.tags.length > 0 && (
-						<div className="mt-2">
-							<TagList tags={post.tags} maxTags={3} size="sm" />
-						</div>
+				</Link>
+			)}
+			<CardHeader className="p-6 pb-4">
+				<div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+					<span>{formatDate(post.publishedAt)}</span>
+					{post.category && (
+						<>
+							<span>•</span>
+							<span className="bg-accent/10 text-accent px-2 py-1 rounded-md text-xs font-medium">
+								{post.category.name}
+							</span>
+						</>
 					)}
-					<CardDescription className="line-clamp-3 mt-2">
-						{post.excerpt}
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="px-6 pb-6">
-					<div className="flex items-center justify-between">
-						<span className="text-sm text-muted-foreground">
-							{post.readingTime}분 읽기
-						</span>
-						<Button
-							variant="ghost"
-							size="sm"
-							className="text-accent hover:text-white hover:bg-accent"
-						>
-							읽기 →
-						</Button>
+				</div>
+				<CardTitle className="text-lg line-clamp-2 overflow-hidden text-ellipsis">
+					<Link href={`/posts/${post.slug}`} className="hover:text-accent transition-colors">
+						{post.title}
+					</Link>
+				</CardTitle>
+				{post.tags && post.tags.length > 0 && (
+					<div className="mt-2">
+						<TagList tags={post.tags} maxTags={3} size="sm" />
 					</div>
-				</CardContent>
-			</Card>
-		</Link>
+				)}
+				<CardDescription className="line-clamp-3 mt-2">
+					{post.excerpt}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="px-6 pb-6">
+				<div className="flex items-center justify-between">
+					<span className="text-sm text-muted-foreground">
+						{post.readingTime}분 읽기
+					</span>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="text-accent hover:text-white hover:bg-accent"
+						asChild
+					>
+						<Link href={`/posts/${post.slug}`}>
+							읽기 →
+						</Link>
+					</Button>
+				</div>
+			</CardContent>
+		</Card>
 	)
 }
 
@@ -143,15 +148,21 @@ function PostsLoading() {
 }
 
 // 페이지네이션 컴포넌트
+interface PaginationProps {
+	currentPage: number
+	totalPages: number
+	onPageChange: (page: number) => void
+	hasNext?: boolean
+	hasPrevious?: boolean
+}
+
 function Pagination({
 	currentPage,
 	totalPages,
 	onPageChange,
-}: {
-	currentPage: number
-	totalPages: number
-	onPageChange: (page: number) => void
-}) {
+	hasNext,
+	hasPrevious,
+}: PaginationProps) {
 	const getPageNumbers = () => {
 		const pages = []
 		const maxVisible = 5
@@ -179,7 +190,7 @@ function Pagination({
 				variant="outline"
 				size="sm"
 				onClick={() => onPageChange(currentPage - 1)}
-				disabled={currentPage === 1}
+				disabled={hasPrevious !== undefined ? !hasPrevious : currentPage === 1}
 				className="gap-1"
 			>
 				<ChevronLeft className="h-4 w-4" />
@@ -202,7 +213,7 @@ function Pagination({
 				variant="outline"
 				size="sm"
 				onClick={() => onPageChange(currentPage + 1)}
-				disabled={currentPage === totalPages}
+				disabled={hasNext !== undefined ? !hasNext : currentPage === totalPages}
 				className="gap-1"
 			>
 				다음
@@ -212,79 +223,141 @@ function Pagination({
 	)
 }
 
+interface PaginationInfo {
+	page: number
+	limit: number
+	totalPosts: number
+	totalPages: number
+	hasMore: boolean
+	hasNext: boolean
+	hasPrevious: boolean
+}
+
+interface ApiResponse {
+	posts: Post[]
+	pagination: PaginationInfo
+	error?: string
+}
+
 export function PostsListPage() {
 	const [posts, setPosts] = useState<Post[]>([])
 	const [loading, setLoading] = useState(true)
+	const [error, setError] = useState<string | null>(null)
 	const [searchTerm, setSearchTerm] = useState('')
 	const [selectedCategory, setSelectedCategory] = useState<string>('all')
 	const [currentPage, setCurrentPage] = useState(1)
-
+	const [pagination, setPagination] = useState<PaginationInfo>({
+		page: 1,
+		limit: 9,
+		totalPosts: 0,
+		totalPages: 0,
+		hasMore: false,
+		hasNext: false,
+		hasPrevious: false
+	})
+	const [allCategories, setAllCategories] = useState<string[]>([])
 
 	const postsPerPage = 9
 
-	// 포스트 데이터 가져오기
-	useEffect(() => {
-		const fetchPosts = async () => {
-			setLoading(true)
-			try {
-				const response = await fetch('/api/posts?limit=100')
-				if (!response.ok) {
-					throw new Error('Failed to fetch posts')
-				}
-				const data: NotionDatabaseResponse = await response.json()
-				setPosts(data.posts)
-			} catch (error) {
-				console.error('포스트를 불러오는 중 오류가 발생했습니다:', error)
-			} finally {
-				setLoading(false)
+	// Fetch posts with query parameters
+	const fetchPosts = useCallback(async (
+		page: number = 1,
+		search: string = '',
+		category: string = 'all'
+	) => {
+		setLoading(true)
+		setError(null) // Clear previous errors
+		try {
+			const params = new URLSearchParams({
+				page: page.toString(),
+				limit: postsPerPage.toString(),
+				...(search && { q: search }),
+				...(category !== 'all' && { category })
+			})
+
+			const response = await fetch(`/api/posts?${params}`)
+			if (!response.ok) {
+				throw new Error(`서버 응답 오류: ${response.status} ${response.statusText}`)
 			}
+			
+			const data: ApiResponse = await response.json()
+			setPosts(data.posts)
+			setPagination(data.pagination)
+			setError(null) // Clear error on success
+		} catch (error) {
+			const errorMessage = error instanceof Error 
+				? error.message 
+				: '포스트를 불러오는 중 알 수 없는 오류가 발생했습니다';
+			console.error('포스트를 불러오는 중 오류가 발생했습니다:', error)
+			setError(errorMessage)
+			setPosts([])
+			setPagination({
+				page: 1,
+				limit: 9,
+				totalPosts: 0,
+				totalPages: 0,
+				hasMore: false,
+				hasNext: false,
+				hasPrevious: false
+			})
+		} finally {
+			setLoading(false)
+		}
+	}, [postsPerPage])
+
+	// Initial load to get all categories
+	useEffect(() => {
+		const loadInitialData = async () => {
+			try {
+				// Fetch all posts once to get categories
+				const response = await fetch('/api/posts?limit=100')
+				if (response.ok) {
+					const data = await response.json()
+					const uniqueCategories = Array.from(
+						new Set(data.posts.map((post: Post) => post.category?.name).filter(Boolean))
+					) as string[]
+					setAllCategories(uniqueCategories)
+				}
+			} catch (error) {
+				console.error('카테고리 로드 중 오류:', error)
+			}
+			
+			// Fetch first page
+			fetchPosts(1, '', 'all')
 		}
 
-		fetchPosts()
-	}, [])
+		loadInitialData()
+	}, [fetchPosts])
 
-	// 필터링된 포스트
-	const filteredPosts = useMemo(() => {
-		return posts.filter((post) => {
-			const matchesSearch =
-				searchTerm === '' ||
-				post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				post.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
-
-			const matchesCategory =
-				selectedCategory === 'all' ||
-				post.category?.name === selectedCategory
-
-			return matchesSearch && matchesCategory
-		})
-	}, [posts, searchTerm, selectedCategory])
-
-	// 페이지네이션된 포스트
-	const paginatedPosts = useMemo(() => {
-		const startIndex = (currentPage - 1) * postsPerPage
-		const endIndex = startIndex + postsPerPage
-		return filteredPosts.slice(startIndex, endIndex)
-	}, [filteredPosts, currentPage, postsPerPage])
-
-	// 총 페이지 수
-	const totalPages = Math.ceil(filteredPosts.length / postsPerPage)
-
-	// 카테고리 목록
-	const categories = useMemo(() => {
-		const uniqueCategories = Array.from(
-			new Set(posts.map((post) => post.category?.name).filter(Boolean))
-		)
-		return uniqueCategories
-	}, [posts])
-
-	// 검색어 변경 시 첫 페이지로 이동
+	// Fetch posts when search, category, or page changes
 	useEffect(() => {
-		setCurrentPage(1)
+		fetchPosts(currentPage, searchTerm, selectedCategory)
+	}, [currentPage, searchTerm, selectedCategory, fetchPosts])
+
+	// Reset to first page when search or category changes
+	useEffect(() => {
+		if (currentPage !== 1 && (searchTerm || selectedCategory !== 'all')) {
+			setCurrentPage(1)
+		}
 	}, [searchTerm, selectedCategory])
 
 	const handlePageChange = (page: number) => {
 		setCurrentPage(page)
 		window.scrollTo({ top: 0, behavior: 'smooth' })
+	}
+
+	const handleSearchChange = (value: string) => {
+		setSearchTerm(value)
+		if (currentPage !== 1) {
+			setCurrentPage(1)
+		}
+	}
+
+	const handleCategoryChange = (value: string) => {
+		setSelectedCategory(value)
+		if (currentPage !== 1) {
+			setCurrentPage(1)
+		}
 	}
 
 	return (
@@ -309,19 +382,19 @@ export function PostsListPage() {
 								type="text"
 								placeholder="포스트 제목이나 내용으로 검색..."
 								value={searchTerm}
-								onChange={(e) => setSearchTerm(e.target.value)}
+								onChange={(e) => handleSearchChange(e.target.value)}
 								className="pl-10"
 							/>
 						</div>
 						<div className="flex items-center gap-2">
 							<Filter className="h-4 w-4 text-muted-foreground" />
-							<Select value={selectedCategory} onValueChange={setSelectedCategory}>
+							<Select value={selectedCategory} onValueChange={handleCategoryChange}>
 								<SelectTrigger className="w-[180px]">
 									<SelectValue placeholder="카테고리 선택" />
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="all">모든 카테고리</SelectItem>
-									{categories.map((category) => (
+									{allCategories.map((category) => (
 										<SelectItem key={category} value={category}>
 											{category}
 										</SelectItem>
@@ -335,7 +408,7 @@ export function PostsListPage() {
 					{!loading && (
 						<div className="mb-6">
 							<p className="text-sm text-muted-foreground">
-								총 {filteredPosts.length}개의 포스트
+								총 {pagination.totalPosts}개의 포스트
 								{searchTerm && (
 								<span> ('{searchTerm}' 검색 결과)</span>
 							)}
@@ -343,20 +416,59 @@ export function PostsListPage() {
 						</div>
 					)}
 
+					{/* 에러 메시지 표시 */}
+					{error && (
+						<div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+							<p className="text-destructive font-medium">오류가 발생했습니다</p>
+							<p className="text-sm text-destructive/80 mt-1">{error}</p>
+						</div>
+					)}
+
 					{/* 포스트 목록 */}
 					{loading ? (
 						<PostsLoading />
-					) : paginatedPosts.length > 0 ? (
+					) : error ? (
+						<div className="text-center py-12">
+							<div className="text-muted-foreground mb-4">
+								<svg
+									className="w-16 h-16 mx-auto mb-4"
+									fill="currentColor"
+									viewBox="0 0 20 20"
+								>
+									<path
+										fillRule="evenodd"
+										d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+										clipRule="evenodd"
+									/>
+								</svg>
+							</div>
+							<h3 className="text-lg font-semibold mb-2">포스트를 불러올 수 없습니다</h3>
+							<p className="text-muted-foreground mb-4">
+								잠시 후 다시 시도해주세요.
+							</p>
+							<Button
+								variant="outline"
+								onClick={() => {
+									setError(null)
+									fetchPosts(currentPage, searchTerm, selectedCategory)
+								}}
+							>
+								다시 시도
+							</Button>
+						</div>
+					) : posts.length > 0 ? (
 						<>
 							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-								{paginatedPosts.map((post) => (
+								{posts.map((post) => (
 									<PostCard key={post.id} post={post} />
 								))}
 							</div>
 							<Pagination
 								currentPage={currentPage}
-								totalPages={totalPages}
+								totalPages={pagination.totalPages}
 								onPageChange={handlePageChange}
+								hasNext={pagination.hasNext}
+								hasPrevious={pagination.hasPrevious}
 							/>
 						</>
 					) : (

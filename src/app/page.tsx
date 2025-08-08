@@ -190,8 +190,8 @@ export default function Home() {
 
           {/* 모든 포스트 보기 버튼 */}
           <div className="text-center mt-12">
-            <Link href="/posts">
-              <Button variant="outline" size="lg" className="gap-2">
+            <Button variant="outline" size="lg" className="gap-2" asChild>
+              <Link href="/posts">
                 모든 포스트 보기
                 <svg
                   className="w-4 h-4"
@@ -206,8 +206,8 @@ export default function Home() {
                     d="M9 5l7 7-7 7"
                   />
                 </svg>
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
