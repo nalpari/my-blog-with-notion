@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 		const searchQuery = searchParams.get('q') || ''
 		
 		// Parse category filter
-		const category = searchParams.get('category') || ''
+		const category = searchParams.get('category') || undefined
 		
 		// For cursor-based pagination
 		const cursor = searchParams.get('cursor') || undefined
