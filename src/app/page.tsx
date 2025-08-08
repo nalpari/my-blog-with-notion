@@ -187,6 +187,28 @@ export default function Home() {
           <Suspense fallback={<PostsLoading />}>
             <PostsList />
           </Suspense>
+
+          {/* 모든 포스트 보기 버튼 */}
+          <div className="text-center mt-12">
+            <Button variant="outline" size="lg" className="gap-2" asChild>
+              <Link href="/posts">
+                모든 포스트 보기
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
 
