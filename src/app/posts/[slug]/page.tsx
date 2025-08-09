@@ -7,6 +7,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
+import { ScrollToTopButton } from '@/components/scroll-to-top-button'
 
 interface PostPageProps {
   params: Promise<{
@@ -207,6 +208,7 @@ export default async function PostPage({ params }: PostPageProps) {
       </article>
       </div>
       <Footer />
+      <ScrollToTopButton />
     </div>
   )
 }
