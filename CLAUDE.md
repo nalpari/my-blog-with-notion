@@ -12,91 +12,102 @@ npm run dev          # Start development server with Turbopack on http://localho
 npm run build        # Create production build
 npm run start        # Start production server
 npm run lint         # Run ESLint for code quality checks
+npx tsc --noEmit     # Run TypeScript type checking
 ```
 
 ## Architecture Overview
 
-This is a Next.js 15 blog application that uses **Notion as a CMS** with a Linear.app-inspired design system.
+This is a Next.js 15 blog application that uses **Notion as a headless CMS** with a Linear.app-inspired design system.
 
-### Core Technologies
-
+### Core Stack
 - **Next.js 15.4.5** with App Router and Turbopack
-- **React 19.1.0** with TypeScript 5
+- **React 19.1.0** with TypeScript 5.9.2 (strict mode)
 - **Notion API** (@notionhq/client) for content management
-- **Tailwind CSS** with custom Linear design system colors
+- **Tailwind CSS** with custom Linear design system
 - **shadcn/ui** components (New York style, CSS variables)
-- **next-themes** for dark mode support
 
-### Notion Integration
+### Project Structure
 
-The application uses Notion as a headless CMS. Key integration points:
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── api/posts/         # API endpoint for posts
+│   └── posts/[slug]/      # Dynamic post pages with SSG
+├── components/
+│   ├── posts/             # Post-related components (Grid, Filters, Pagination, Loading)
+│   ├── ui/                # shadcn/ui components
+│   ├── post-card.tsx      # Reusable PostCard component
+│   └── ErrorBoundary.tsx  # Error handling wrapper
+├── config/                # Configuration files
+│   ├── constants.ts       # App-wide constants (POSTS_CONFIG, PAGINATION_CONFIG, etc.)
+│   └── messages.ts        # UI messages and text content
+├── hooks/                 # Custom React hooks
+│   ├── usePosts.ts       # Posts data fetching and management
+│   └── useCategories.ts  # Categories management
+├── lib/                   # Utility functions
+│   ├── notion.ts         # Notion API integration
+│   ├── date-utils.ts     # Date formatting utilities
+│   └── error-handler.ts  # Error handling utilities
+└── types/                # TypeScript type definitions
+    └── notion.ts         # Notion-related types
+```
 
-- **Environment Variables Required:**
+### Notion CMS Integration
 
-  ```bash
-  NOTION_TOKEN=your_notion_integration_token
-  NOTION_DATABASE_ID=your_notion_database_id
-  ```
+**Required Environment Variables:**
+```bash
+NOTION_TOKEN=secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
 
-- **Database Schema:** The Notion database must have these properties:
+**Notion Database Schema Requirements:**
+- `title` (Title): Post title
+- `slug` (Text): URL slug for the post
+- `excerpt` (Text): Post summary (150 chars recommended)
+- `coverImage` (Files & media): Cover image
+- `status` (Select): Draft/Published/Archived
+- `category` (Select): Post category
+- `tags` (Multi-select): Post tags
+- `publishedAt` (Date): Publication date
+- `readingTime` (Number): Estimated reading time in minutes
 
-  - `title` (Title): Post title
-  - `slug` (Text): URL slug
-  - `excerpt` (Text): Post summary
-  - `coverImage` (Files & media): Cover image
-  - `status` (Select): Draft/Published/Archived
-  - `category` (Select): Post category
-  - `tags` (Multi-select): Post tags
-  - `publishedAt` (Date): Publication date
-  - `readingTime` (Number): Estimated reading time
+**Key API Functions** in `src/lib/notion.ts`:
+- `getPublishedPosts(limit, cursor?, search?, category?)` - Paginated posts with filtering
+- `getLatestPosts()` - Homepage featured posts
+- `getPostBySlug(slug)` - Individual post data
+- `getPostBlocks(pageId)` - Post content as Markdown
+- `getPostsByCategory(category, limit?)` - Category-filtered posts
 
-- **Key API Functions** in `src/lib/notion.ts`:
-  - `getPublishedPosts()` - Paginated published posts
-  - `getLatestPosts()` - Homepage posts
-  - `getPostBySlug()` - Individual post by slug
-  - `getPostBlocks()` - Post content as Markdown
-  - `getPostsByCategory()` - Category filtering
+### Data Flow
 
-### Data Flow Architecture
+1. **Static Site Generation (SSG)**: Posts are pre-rendered at build time using `generateStaticParams()`
+2. **Content Pipeline**: Notion blocks → Markdown (notion-to-md) → HTML (react-markdown with syntax highlighting)
+3. **Type Safety**: All Notion responses are strongly typed via `NotionPageProperties` interface
+4. **Error Handling**: Centralized error handling with `AppError` class and `ErrorBoundary` component
 
-1. **Static Generation:** Posts are pre-rendered at build time using `generateStaticParams()`
-2. **Content Transformation:** Notion blocks → Markdown (notion-to-md) → HTML (react-markdown)
-3. **Image Optimization:** External images from Notion are optimized via Next.js Image component
-4. **Type Safety:** All Notion responses are typed via `src/types/notion.ts`
+### Key Design Patterns
 
-### Component Architecture
+**Component Organization:**
+- Shared components extracted to reduce duplication (e.g., `PostCard`)
+- Large components split into smaller, focused components
+- Custom hooks for data fetching logic separation
 
-**Page Structure:**
+**Configuration Management:**
+- Constants centralized in `src/config/constants.ts`
+- UI messages in `src/config/messages.ts`
+- Environment variables for sensitive data
 
-- `src/app/page.tsx` - Homepage with latest posts grid
-- `src/app/posts/[slug]/page.tsx` - Individual post pages with SSG
+**Type Safety:**
+- No `any` types allowed (use specific types or `unknown`)
+- Notion API responses typed with `NotionPageProperties`
+- Next.js 15 async params handling: `params: Promise<{ slug: string }>`
 
-**UI Components:**
-
-- All shadcn/ui components in `src/components/ui/`
-- Theme provider wraps the application for dark mode
-- Components use CSS variables for theming consistency
-
-### Styling System
-
-1. **CSS Variables** in `src/app/globals.css` define the color palette
-2. **Tailwind Config** extends these variables for consistent theming
-3. **cn() utility** (`src/lib/utils.ts`) handles conditional className merging
-4. **Dark Mode** automatic via system preference or manual toggle
-
-### Image Handling
+### Image Optimization
 
 Configured domains in `next.config.ts`:
-
 - `prod-files-secure.s3.us-west-2.amazonaws.com` (Notion files)
 - `images.unsplash.com` (External images)
 - `www.notion.so` (Notion avatars)
-
-### TypeScript Configuration
-
-- Path alias: `@/*` → `./src/*`
-- Strict mode enabled
-- All Notion API responses fully typed
 
 ### Adding New shadcn/ui Components
 
@@ -104,4 +115,17 @@ Configured domains in `next.config.ts`:
 npx shadcn@latest add [component-name]
 ```
 
-This maintains consistent styling with the existing design system.
+Components are installed to `src/components/ui/` with CSS variables for theming.
+
+### Recent Refactoring (Completed)
+
+The codebase recently underwent major refactoring with the following improvements:
+- Component deduplication and extraction
+- Type safety improvements (removed all `any` types)
+- Utility functions centralization
+- Large component splitting into smaller, focused components
+- Custom hooks for logic separation
+- Configuration and message centralization
+- Error handling system implementation
+
+See `docs/REFACTORING.md` for detailed refactoring guidelines and patterns.
