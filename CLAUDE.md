@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 - 답변과 추론과정은 항상 한국어로 작성해주세요.
-- 커밋 메세지는 항상 fix, feat, chore, style, test, docs 등 접두사는 영어로 하고, 나머지 커밋 내용은 한글로 작성해줘.
+- 커밋 메세지는 항상 fix, feat, chore, style, test, docs, refactor 등 접두사는 영어로 하고, 나머지 커밋 내용은 한글로 작성해줘.
 
 ## Development Commands
 
@@ -32,12 +32,14 @@ This is a Next.js 15 blog application that uses **Notion as a CMS** with a Linea
 The application uses Notion as a headless CMS. Key integration points:
 
 - **Environment Variables Required:**
+
   ```bash
   NOTION_TOKEN=your_notion_integration_token
   NOTION_DATABASE_ID=your_notion_database_id
   ```
 
 - **Database Schema:** The Notion database must have these properties:
+
   - `title` (Title): Post title
   - `slug` (Text): URL slug
   - `excerpt` (Text): Post summary
@@ -65,10 +67,12 @@ The application uses Notion as a headless CMS. Key integration points:
 ### Component Architecture
 
 **Page Structure:**
+
 - `src/app/page.tsx` - Homepage with latest posts grid
 - `src/app/posts/[slug]/page.tsx` - Individual post pages with SSG
 
 **UI Components:**
+
 - All shadcn/ui components in `src/components/ui/`
 - Theme provider wraps the application for dark mode
 - Components use CSS variables for theming consistency
@@ -83,6 +87,7 @@ The application uses Notion as a headless CMS. Key integration points:
 ### Image Handling
 
 Configured domains in `next.config.ts`:
+
 - `prod-files-secure.s3.us-west-2.amazonaws.com` (Notion files)
 - `images.unsplash.com` (External images)
 - `www.notion.so` (Notion avatars)
