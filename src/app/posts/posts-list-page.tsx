@@ -1,14 +1,12 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
 	Card,
 	CardContent,
-	CardDescription,
 	CardHeader,
-	CardTitle,
 } from '@/components/ui/card'
 import {
 	Select,
@@ -18,105 +16,12 @@ import {
 	SelectValue,
 } from '@/components/ui/select'
 
-import Link from 'next/link'
-import Image from 'next/image'
-import type { Post, NotionDatabaseResponse } from '@/types/notion'
+import type { Post } from '@/types/notion'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
-import { TagList } from '@/components/ui/tag-badge'
+import { PostCard } from '@/components/post-card'
 import { Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react'
-
-// 포스트 카드 컴포넌트 (기존과 동일)
-function PostCard({ post }: { post: Post }) {
-	const formatDate = (dateString: string) => {
-		return new Date(dateString)
-			.toLocaleDateString('ko-KR', {
-				year: 'numeric',
-				month: '2-digit',
-				day: '2-digit',
-			})
-			.replace(/\. /g, '.')
-			.replace(/\.$/, '')
-	}
-
-	return (
-		<Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden p-0 h-full">
-			{post.coverImage && (
-				<Link href={`/posts/${post.slug}`} className="block relative h-48 w-full overflow-hidden">
-					<Image
-						src={post.coverImage}
-						alt={post.title}
-						fill
-						className="object-cover group-hover:scale-105 transition-transform duration-300"
-						sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-					/>
-				</Link>
-			)}
-			{!post.coverImage && (
-				<Link href={`/posts/${post.slug}`} className="block relative h-48 w-full overflow-hidden bg-muted">
-					<div className="flex items-center justify-center h-full">
-						<div className="text-muted-foreground">
-							<svg
-								className="w-12 h-12"
-								fill="currentColor"
-								viewBox="0 0 20 20"
-							>
-								<path
-									fillRule="evenodd"
-									d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-									clipRule="evenodd"
-								/>
-							</svg>
-						</div>
-					</div>
-				</Link>
-			)}
-			<CardHeader className="p-6 pb-4">
-				<div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-					<span>{formatDate(post.publishedAt)}</span>
-					{post.category && (
-						<>
-							<span>•</span>
-							<span className="bg-accent/10 text-accent px-2 py-1 rounded-md text-xs font-medium">
-								{post.category.name}
-							</span>
-						</>
-					)}
-				</div>
-				<CardTitle className="text-lg line-clamp-2 overflow-hidden text-ellipsis">
-					<Link href={`/posts/${post.slug}`} className="hover:text-accent transition-colors">
-						{post.title}
-					</Link>
-				</CardTitle>
-				{post.tags && post.tags.length > 0 && (
-					<div className="mt-2">
-						<TagList tags={post.tags} maxTags={3} size="sm" />
-					</div>
-				)}
-				<CardDescription className="line-clamp-3 mt-2">
-					{post.excerpt}
-				</CardDescription>
-			</CardHeader>
-			<CardContent className="px-6 pb-6">
-				<div className="flex items-center justify-between">
-					<span className="text-sm text-muted-foreground">
-						{post.readingTime}분 읽기
-					</span>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="text-accent hover:text-white hover:bg-accent"
-						asChild
-					>
-						<Link href={`/posts/${post.slug}`}>
-							읽기 →
-						</Link>
-					</Button>
-				</div>
-			</CardContent>
-		</Card>
-	)
-}
+import { POSTS_CONFIG, PAGINATION_CONFIG, FILTER_CONFIG } from '@/config/constants'
 
 // 로딩 컴포넌트
 function PostsLoading() {
@@ -243,12 +148,12 @@ export function PostsListPage() {
 	const [posts, setPosts] = useState<Post[]>([])
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
-	const [searchTerm, setSearchTerm] = useState('')
-	const [selectedCategory, setSelectedCategory] = useState<string>('all')
-	const [currentPage, setCurrentPage] = useState(1)
+	const [searchTerm, setSearchTerm] = useState<string>(FILTER_CONFIG.DEFAULT_SEARCH)
+	const [selectedCategory, setSelectedCategory] = useState<string>(FILTER_CONFIG.ALL_CATEGORIES)
+	const [currentPage, setCurrentPage] = useState<number>(PAGINATION_CONFIG.INITIAL_PAGE)
 	const [pagination, setPagination] = useState<PaginationInfo>({
-		page: 1,
-		limit: 9,
+		page: PAGINATION_CONFIG.INITIAL_PAGE,
+		limit: POSTS_CONFIG.POSTS_PER_PAGE,
 		totalPosts: 0,
 		totalPages: 0,
 		hasMore: false,
@@ -257,7 +162,7 @@ export function PostsListPage() {
 	})
 	const [allCategories, setAllCategories] = useState<string[]>([])
 
-	const postsPerPage = 9
+	const postsPerPage = POSTS_CONFIG.POSTS_PER_PAGE
 	const abortControllerRef = useRef<AbortController | null>(null)
 
 	// Fetch posts with query parameters
@@ -382,7 +287,7 @@ export function PostsListPage() {
 		if (currentPage !== 1 && (searchTerm || selectedCategory !== 'all')) {
 			setCurrentPage(1)
 		}
-	}, [searchTerm, selectedCategory])
+	}, [searchTerm, selectedCategory, currentPage])
 
 	// Cleanup on unmount
 	useEffect(() => {
@@ -463,7 +368,7 @@ export function PostsListPage() {
 							<p className="text-sm text-muted-foreground">
 								총 {pagination.totalPosts}개의 포스트
 								{searchTerm && (
-								<span> ('{searchTerm}' 검색 결과)</span>
+								<span> (&apos;{searchTerm}&apos; 검색 결과)</span>
 							)}
 							</p>
 						</div>

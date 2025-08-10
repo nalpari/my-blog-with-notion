@@ -7,6 +7,8 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
+import { POSTS_CONFIG } from '@/config/constants'
+import { MESSAGES } from '@/config/messages'
 
 interface PostPageProps {
   params: Promise<{
@@ -64,9 +66,9 @@ export default async function PostPage({ params }: PostPageProps) {
                 day: 'numeric'
               })}
             </time>
-            <span>By Swaraj Bachu</span>
-            <span>3 min read</span>
-            <span>566 words</span>
+            <span>By {POSTS_CONFIG.DEFAULT_AUTHOR}</span>
+            <span>{MESSAGES.READING_TIME(post.readingTime)}</span>
+            <span>{POSTS_CONFIG.DEFAULT_WORD_COUNT} words</span>
           </div>
           
           {/* 제목 - 더 크게 */}
@@ -101,7 +103,8 @@ export default async function PostPage({ params }: PostPageProps) {
             remarkPlugins={[remarkGfm]}
             components={{
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              code({ inline, className, children, ...props }: any) {
+              code(props: any) {
+                const { inline, className, children } = props
                 const match = /language-(\w+)/.exec(className || '')
                 return !inline && match ? (
                   <SyntaxHighlighter
@@ -109,12 +112,11 @@ export default async function PostPage({ params }: PostPageProps) {
                     language={match[1]}
                     PreTag="div"
                     className="rounded-lg"
-                    {...props}
                   >
                     {String(children).replace(/\n$/, '')}
                   </SyntaxHighlighter>
                 ) : (
-                  <code className={className} {...props}>
+                  <code className={className}>
                     {children}
                   </code>
                 )

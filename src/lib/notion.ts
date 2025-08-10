@@ -96,11 +96,25 @@ function extractMultiSelectProperty(multiSelect: NotionSelect[]): Tag[] {
 }
 
 /**
+ * 노션 페이지 속성 타입 (Notion API 응답)
+ */
+interface NotionPageProperties {
+  title?: { title: Array<{ plain_text: string }> }
+  slug?: { rich_text: Array<{ plain_text: string }> }
+  excerpt?: { rich_text: Array<{ plain_text: string }> }
+  coverImage?: { files: Array<{ type: 'external' | 'file'; external?: { url: string }; file?: { url: string } }> }
+  status?: { select?: { name: string } }
+  category?: { select?: { id: string; name: string; color: string } }
+  tags?: { multi_select: Array<{ id: string; name: string; color: string }> }
+  publishedAt?: { date?: { start: string } }
+  readingTime?: { number?: number }
+}
+
+/**
  * 노션 페이지를 Post 객체로 변환
  */
 function transformNotionPageToPost(page: NotionPage): Post {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const properties = page.properties as Record<string, any>
+  const properties = page.properties as NotionPageProperties
 
   // 기본 정보 추출
   const title = extractPlainText(properties.title?.title || [])
@@ -115,7 +129,7 @@ function transformNotionPageToPost(page: NotionPage): Post {
   const status = properties.status?.select?.name || 'Draft'
 
   // 카테고리 및 태그 추출
-  const category = extractSelectProperty(properties.category?.select) || {
+  const category = extractSelectProperty(properties.category?.select || null) || {
     id: 'default',
     name: 'Uncategorized',
     slug: 'uncategorized',
