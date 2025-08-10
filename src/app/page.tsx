@@ -30,8 +30,8 @@ async function PostsList() {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {posts.map((post: Post) => (
-          <PostCard key={post.id} post={post} />
+        {posts.map((post: Post, index: number) => (
+          <PostCard key={post.id} post={post} priority={index === 0} />
         ))}
       </div>
     )
