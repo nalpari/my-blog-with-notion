@@ -1,5 +1,6 @@
 import { Client } from '@notionhq/client'
 import { NotionToMarkdown } from 'notion-to-md'
+import type { QueryDatabaseParameters } from '@notionhq/client/build/src/api-endpoints'
 import type {
   Post,
   Category,
@@ -156,59 +157,36 @@ export async function getPublishedPosts(
   category?: string,
 ): Promise<NotionDatabaseResponse> {
   try {
-    // 기본 필터: Published 상태인 포스트만
-    type NotionFilter = {
-      property?: string
-      select?: { equals: string }
-      title?: { contains: string }
-      rich_text?: { contains: string }
-      or?: NotionFilter[]
-      and?: NotionFilter[]
-    }
-    
-    const filters: NotionFilter[] = [
-      {
-        property: 'status',
-        select: {
-          equals: 'Published',
+    // Notion SDK 타입에 맞춘 컴파운드 필터 구성
+    const filter: QueryDatabaseParameters['filter'] = {
+      and: [
+        {
+          property: 'status',
+          select: { equals: 'Published' },
         },
-      },
-    ]
-
-    // 검색어 필터 추가 (제목과 요약 모두 검색)
-    if (searchQuery) {
-      filters.push({
-        or: [
-          {
-            property: 'title',
-            title: {
-              contains: searchQuery,
-            },
-          },
-          {
-            property: 'excerpt',
-            rich_text: {
-              contains: searchQuery,
-            },
-          },
-        ],
-      })
+        ...(searchQuery
+          ? [
+              {
+                or: [
+                  { property: 'title', title: { contains: searchQuery } },
+                  {
+                    property: 'excerpt',
+                    rich_text: { contains: searchQuery },
+                  },
+                ],
+              },
+            ]
+          : []),
+        ...(category && category !== 'all'
+          ? [
+              {
+                property: 'category',
+                select: { equals: category },
+              },
+            ]
+          : []),
+      ],
     }
-
-    // 카테고리 필터 추가
-    if (category && category !== 'all') {
-      filters.push({
-        property: 'category',
-        select: {
-          equals: category,
-        },
-      })
-    }
-
-    // 최종 필터 구성
-    const filter = filters.length > 1 
-      ? { and: filters }
-      : filters[0]
 
     const response = await notion.databases.query({
       database_id: DATABASE_ID,
