@@ -10,5 +10,13 @@
       "Bash(git push:*)"
     ],
     "deny": []
-  }
+  },
+  "disabledMcpjsonServers": [
+    "context7",
+    "Sequential Thinking",
+    "taskmaster-ai",
+    "postgresql-mcp",
+    "Figma AI Bridge",
+    "GitHub"
+  ]
 }
