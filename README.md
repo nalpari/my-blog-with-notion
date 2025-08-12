@@ -30,8 +30,10 @@ Linear.app에서 영감을 받은 모던하고 미니멀한 개발자 블로그�
 - **Notion CMS 통합**: Notion 데이터베이스를 사용한 블로그 포스트 관리
 - **실시간 검색**: 제목과 내용 기반 포스트 검색
 - **카테고리 필터링**: 카테고리별 포스트 분류 및 필터
-- **태그 시스템**: 다중 태그 지원
+- **태그 시스템**: 다중 태그 지원 및 태그별 포스트 필터링 (Tag Cloud, Tag List 뷰)
+- **Author 시스템**: 작성자 정보 표시 (아바타, 이름, 이메일)
 - **Markdown 렌더링**: 코드 하이라이팅을 포함한 풍부한 콘텐츠 표현
+- **읽기 시간 표시**: 포스트별 예상 읽기 시간 자동 계산
 - **SEO 최적화**: 메타데이터 및 Open Graph 태그 자동 생성
 - **에러 처리**: ErrorBoundary와 중앙화된 에러 관리
 
@@ -86,6 +88,7 @@ Linear.app에서 영감을 받은 모던하고 미니멀한 개발자 블로그�
    | `status` | Select | Draft, Published, Archived | ✅ |
    | `category` | Select | 포스트 카테고리 | ✅ |
    | `tags` | Multi-select | 포스트 태그들 | ❌ |
+   | `Author` | People | 작성자 (대문자 A 주의) | ❌ |
    | `publishedAt` | Date | 발행일 | ✅ |
    | `readingTime` | Number | 예상 읽기 시간(분) | ❌ |
 
@@ -112,23 +115,41 @@ NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 git clone https://github.com/nalpari/my-blog-with-notion.git
 cd my-blog-with-notion
 
-# 의존성 설치
-npm install
+# 의존성 설치 (선호하는 패키지 매니저 사용)
+npm install      # npm 사용
+yarn install     # yarn 사용
+pnpm install     # pnpm 사용
+bun install      # bun 사용
 
 # 개발 서버 실행 (Turbopack 사용)
-npm run dev
+npm run dev      # npm 사용
+yarn dev         # yarn 사용
+pnpm dev         # pnpm 사용
+bun dev          # bun 사용
 
 # 프로덕션 빌드
-npm run build
+npm run build    # npm 사용
+yarn build       # yarn 사용
+pnpm build       # pnpm 사용
+bun run build    # bun 사용
 
 # 프로덕션 서버 실행
-npm run start
+npm run start    # npm 사용
+yarn start       # yarn 사용
+pnpm start       # pnpm 사용
+bun start        # bun 사용
 
 # 코드 품질 검사
-npm run lint
+npm run lint     # npm 사용
+yarn lint        # yarn 사용
+pnpm lint        # pnpm 사용
+bun run lint     # bun 사용
 
 # TypeScript 타입 체크
-npx tsc --noEmit
+npx tsc --noEmit        # npm 사용
+yarn tsc --noEmit       # yarn 사용
+pnpm exec tsc --noEmit  # pnpm 사용
+bunx tsc --noEmit       # bun 사용
 ```
 
 브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 확인하세요.
@@ -145,6 +166,9 @@ my-blog-with-notion/
 │   │   │   ├── [slug]/         # 동적 포스트 상세 페이지 (SSG)
 │   │   │   ├── page.tsx        # 포스트 목록 페이지
 │   │   │   └── posts-list-page.tsx # 클라이언트 컴포넌트
+│   │   ├── tags/               
+│   │   │   ├── [slug]/         # 태그별 포스트 필터링 페이지
+│   │   │   └── page.tsx        # 전체 태그 목록 페이지
 │   │   ├── layout.tsx          # 루트 레이아웃
 │   │   ├── page.tsx            # 홈페이지
 │   │   └── globals.css         # 전역 스타일
@@ -153,8 +177,13 @@ my-blog-with-notion/
 │   │   │   ├── PostsGrid.tsx   # 포스트 그리드
 │   │   │   ├── PostsFilters.tsx # 검색 및 필터
 │   │   │   ├── PostsPagination.tsx # 페이지네이션
+│   │   │   ├── PostsPaginationNav.tsx # 페이지네이션 네비게이션
 │   │   │   └── PostsLoading.tsx # 로딩 스켈레톤
+│   │   ├── tags/               # 태그 관련 컴포넌트
+│   │   │   ├── TagCloud.tsx    # 태그 클라우드 뷰
+│   │   │   └── TagList.tsx     # 태그 리스트 뷰
 │   │   ├── ui/                 # shadcn/ui 컴포넌트
+│   │   │   └── tag-badge.tsx   # 태그 배지 컴포넌트
 │   │   ├── post-card.tsx       # 재사용 가능한 포스트 카드
 │   │   ├── ErrorBoundary.tsx   # 에러 바운더리
 │   │   ├── header.tsx          # 네비게이션 헤더
@@ -170,6 +199,8 @@ my-blog-with-notion/
 │   │   ├── notion.ts           # Notion API 통합
 │   │   ├── date-utils.ts       # 날짜 포맷팅
 │   │   ├── error-handler.ts    # 에러 처리
+│   │   ├── image-utils.ts      # 이미지 최적화 유틸리티
+│   │   ├── word-count.ts       # 읽기 시간 계산
 │   │   └── utils.ts            # 기타 유틸리티
 │   └── types/                  # TypeScript 타입 정의
 │       └── notion.ts           # Notion 관련 타입
@@ -246,6 +277,8 @@ my-blog-with-notion/
 | `getPostBySlug()` | 슬러그로 특정 포스트 조회 | slug | Post \| null |
 | `getPostBlocks()` | 포스트 콘텐츠를 Markdown으로 변환 | pageId | string |
 | `getPostsByCategory()` | 카테고리별 포스트 조회 | categoryName, limit? | Post[] |
+| `getAllTags()` | 모든 태그와 사용 횟수 조회 | - | Array<Tag & { count: number }> |
+| `getPostsByTag()` | 태그별 포스트 조회 | tagName, limit?, cursor? | NotionDatabaseResponse |
 
 ### 커스텀 훅
 
@@ -325,14 +358,26 @@ CMD ["npm", "start"]
 
 ### 이미지 최적화
 - Next.js Image 컴포넌트로 자동 최적화
-- WebP 포맷 자동 변환
-- Lazy Loading 기본 적용
+- WebP/AVIF 포맷 자동 변환
+- Lazy Loading 기본 적용 (처음 3개 이미지는 priority 로딩)
 - 반응형 이미지 제공
+- 30일 캐싱 TTL 설정
+- Blur placeholder 지원
+
+### 캐싱 전략
+
+#### 이미지 캐싱
+- **브라우저 캐싱**: Cache-Control 헤더로 1년 캐싱
+- **CDN 캐싱**: Vercel Edge Network 활용
+- **Next.js 캐싱**: 30일 minimumCacheTTL 설정
+- **최적화**: 디바이스별 최적화된 이미지 제공
 
 ### 허용된 이미지 도메인
 - `prod-files-secure.s3.us-west-2.amazonaws.com` (Notion 파일)
+- `s3.us-west-2.amazonaws.com` (Notion S3)
 - `images.unsplash.com` (외부 이미지)
 - `www.notion.so` (Notion 아바타)
+- `lh3.googleusercontent.com` (Google 프로필 이미지)
 
 ### 빌드 최적화
 - Static Generation으로 빌드 시 페이지 생성
@@ -357,6 +402,15 @@ NODE_OPTIONS='--inspect' npm run dev
 
 ## 📈 최근 업데이트
 
+### v2.1.0 - 태그 시스템 & Author 기능 추가 (2025.01)
+- 🏷️ 태그 시스템 구현 (Tag Cloud, Tag List 뷰)
+- 👤 Author 기능 추가 (작성자 정보 표시)
+- 🖼️ 이미지 최적화 유틸리티 추가
+- 📊 읽기 시간 자동 계산 기능
+- 🎨 태그별 포스트 필터링 페이지 추가
+- 🔧 DOM 중첩 오류 수정 (PostCard 컴포넌트)
+- ⚡ 이미지 캐싱 전략 개선 (30일 TTL)
+
 ### v2.0.0 - 대규모 리팩토링 (2025.01)
 - ✨ PostCard 컴포넌트 공통화로 중복 코드 30% 감소
 - 🎯 모든 any 타입 제거 및 타입 안정성 강화
@@ -366,6 +420,14 @@ NODE_OPTIONS='--inspect' npm run dev
 - 🛡️ ErrorBoundary 및 에러 처리 시스템 구축
 - 📚 날짜 유틸리티 함수 중앙화
 - ⚡ Next.js 15 async params 처리 개선
+
+## 🚧 알려진 이슈 및 개선 사항
+
+- [ ] 태그 검색 기능 추가 예정
+- [ ] Author 페이지 (작성자별 포스트 목록) 구현 예정
+- [ ] 댓글 시스템 통합 고려 중
+- [ ] RSS 피드 지원 예정
+- [ ] 다국어 지원 고려 중
 
 ## 🤝 기여하기
 

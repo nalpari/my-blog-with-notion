@@ -32,9 +32,11 @@ This is a Next.js 15 blog application that uses **Notion as a headless CMS** wit
 src/
 ├── app/                    # Next.js App Router pages
 │   ├── api/posts/         # API endpoint for posts
-│   └── posts/[slug]/      # Dynamic post pages with SSG
+│   ├── posts/[slug]/      # Dynamic post pages with SSG
+│   └── tags/[slug]/       # Tag-filtered posts pages
 ├── components/
 │   ├── posts/             # Post-related components (Grid, Filters, Pagination, Loading)
+│   ├── tags/              # Tag components (TagCloud, TagList)
 │   ├── ui/                # shadcn/ui components
 │   ├── post-card.tsx      # Reusable PostCard component
 │   └── ErrorBoundary.tsx  # Error handling wrapper
@@ -47,6 +49,8 @@ src/
 ├── lib/                   # Utility functions
 │   ├── notion.ts         # Notion API integration
 │   ├── date-utils.ts     # Date formatting utilities
+│   ├── image-utils.ts    # Image optimization utilities
+│   ├── word-count.ts     # Reading time calculation
 │   └── error-handler.ts  # Error handling utilities
 └── types/                # TypeScript type definitions
     └── notion.ts         # Notion-related types
@@ -68,6 +72,7 @@ NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 - `status` (Select): Draft/Published/Archived
 - `category` (Select): Post category
 - `tags` (Multi-select): Post tags
+- `Author` (People): Post author - **Note: Capital 'A' in property name**
 - `publishedAt` (Date): Publication date
 - `readingTime` (Number): Estimated reading time in minutes
 
@@ -77,6 +82,8 @@ NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 - `getPostBySlug(slug)` - Individual post data
 - `getPostBlocks(pageId)` - Post content as Markdown
 - `getPostsByCategory(category, limit?)` - Category-filtered posts
+- `getAllTags()` - All tags with usage count
+- `getPostsByTag(tagName, limit?, cursor?)` - Tag-filtered posts
 
 ### Data Flow
 
@@ -106,8 +113,16 @@ NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 Configured domains in `next.config.ts`:
 - `prod-files-secure.s3.us-west-2.amazonaws.com` (Notion files)
+- `s3.us-west-2.amazonaws.com` (Notion S3)
 - `images.unsplash.com` (External images)
 - `www.notion.so` (Notion avatars)
+- `lh3.googleusercontent.com` (Google profile images)
+
+**Caching Strategy:**
+- 30-day minimum cache TTL
+- WebP/AVIF format support
+- Blur placeholder for improved UX
+- Priority loading for first 3 images
 
 ### Adding New shadcn/ui Components
 
@@ -117,15 +132,33 @@ npx shadcn@latest add [component-name]
 
 Components are installed to `src/components/ui/` with CSS variables for theming.
 
-### Recent Refactoring (Completed)
+### Recent Features
 
-The codebase recently underwent major refactoring with the following improvements:
-- Component deduplication and extraction
-- Type safety improvements (removed all `any` types)
-- Utility functions centralization
-- Large component splitting into smaller, focused components
-- Custom hooks for logic separation
-- Configuration and message centralization
-- Error handling system implementation
+**Tag System:**
+- Tag Cloud and Tag List views at `/tags`
+- Tag-filtered posts at `/tags/[slug]`
+- Clickable tags throughout the UI
 
-See `docs/REFACTORING.md` for detailed refactoring guidelines and patterns.
+**Author System:**
+- Author information display with avatar and email
+- Notion People property integration (property name must be "Author" with capital A)
+
+**Image Optimization:**
+- Custom image utilities in `src/lib/image-utils.ts`
+- Automatic optimization for Notion and Unsplash images
+- Responsive image sizing based on viewport
+
+### Common Issues & Solutions
+
+**Author Data Not Retrieved:**
+- Ensure Notion property is named "Author" (capital A), not "author"
+- The API uses case-sensitive property names
+
+**DOM Nesting Errors:**
+- Avoid nesting interactive elements (Links, Buttons)
+- PostCard component has been refactored to prevent these issues
+
+**TypeScript Strict Mode:**
+- All variables must be properly typed
+- Use specific types instead of `any`
+- Handle undefined/null cases explicitly
