@@ -1,5 +1,13 @@
 // 노션 블로그 관련 타입 정의
 
+// Author 타입 정의
+export interface Author {
+	id: string
+	name: string
+	email?: string
+	avatar?: string
+}
+
 // 포스트 타입 정의
 export interface Post {
 	id: string
@@ -10,6 +18,7 @@ export interface Post {
 	status: 'Draft' | 'Published' | 'Archived'
 	category: Category
 	tags: Tag[]
+	author?: Author
 	createdAt: string
 	updatedAt: string
 	publishedAt: string
@@ -91,6 +100,18 @@ export interface NotionDatabaseSchema {
 		multi_select: Array<{
 			name: string
 			color: string
+		}>
+	}
+	author: {
+		type: 'people'
+		people: Array<{
+			id: string
+			name?: string
+			avatar_url?: string
+			type?: string
+			person?: {
+				email?: string
+			}
 		}>
 	}
 	publishedAt: {

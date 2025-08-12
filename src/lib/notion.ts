@@ -5,6 +5,7 @@ import type {
   Post,
   Category,
   Tag,
+  Author,
   NotionDatabaseResponse,
 } from '@/types/notion'
 
@@ -24,6 +25,16 @@ type NotionSelect = {
   id: string
   name: string
   color: string
+}
+
+type NotionPerson = {
+  id: string
+  name?: string
+  avatar_url?: string
+  type?: string
+  person?: {
+    email?: string
+  }
 }
 
 type NotionPage = {
@@ -96,6 +107,21 @@ function extractMultiSelectProperty(multiSelect: NotionSelect[]): Tag[] {
 }
 
 /**
+ * 노션 People 프로퍼티를 Author로 변환
+ */
+function extractAuthorProperty(people: NotionPerson[]): Author | null {
+  if (!people || !Array.isArray(people) || people.length === 0) return null
+
+  const person = people[0]
+  return {
+    id: person.id || '',
+    name: person.name || 'Unknown Author',
+    email: person.person?.email,
+    avatar: person.avatar_url,
+  }
+}
+
+/**
  * 노션 페이지 속성 타입 (Notion API 응답)
  */
 interface NotionPageProperties {
@@ -106,6 +132,7 @@ interface NotionPageProperties {
   status?: { select?: { name: string } }
   category?: { select?: { id: string; name: string; color: string } }
   tags?: { multi_select: Array<{ id: string; name: string; color: string }> }
+  Author?: { people: Array<NotionPerson> }  // 대문자 A로 변경
   publishedAt?: { date?: { start: string } }
   readingTime?: { number?: number }
 }
@@ -142,6 +169,9 @@ function transformNotionPageToPost(page: NotionPage): Post {
   const updatedAt = page.last_edited_time
   const publishedAt = properties.publishedAt?.date?.start || createdAt
 
+  // 작성자 추출 (대문자 A로 수정)
+  const author = extractAuthorProperty(properties.Author?.people || [])
+  
   // 읽기 시간 추출
   const readingTime = properties.readingTime?.number || 5
 
@@ -154,6 +184,7 @@ function transformNotionPageToPost(page: NotionPage): Post {
     status: status as 'Draft' | 'Published' | 'Archived',
     category,
     tags,
+    author: author || undefined,
     createdAt,
     updatedAt,
     publishedAt,
@@ -331,6 +362,103 @@ export async function getPostsByCategory(
     )
   } catch (error) {
     console.error('Error fetching posts by category:', error)
+    return []
+  }
+}
+
+/**
+ * 태그별 포스트 가져오기 (페이지네이션 지원)
+ */
+export async function getPostsByTag(
+  tagName: string,
+  limit: number = 10,
+  startCursor?: string,
+): Promise<NotionDatabaseResponse> {
+  try {
+    const response = await notion.databases.query({
+      database_id: DATABASE_ID,
+      filter: {
+        and: [
+          {
+            property: 'tags',
+            multi_select: {
+              contains: tagName,
+            },
+          },
+          {
+            property: 'status',
+            select: {
+              equals: 'Published',
+            },
+          },
+        ],
+      },
+      sorts: [
+        {
+          property: 'publishedAt',
+          direction: 'descending',
+        },
+      ],
+      page_size: limit,
+      start_cursor: startCursor,
+    })
+
+    const posts = response.results.map((page) =>
+      transformNotionPageToPost(page as NotionPage),
+    )
+
+    return {
+      posts,
+      hasMore: response.has_more,
+      nextCursor: response.next_cursor || undefined,
+    }
+  } catch (error) {
+    console.error('Error fetching posts by tag:', error)
+    return {
+      posts: [],
+      hasMore: false,
+    }
+  }
+}
+
+/**
+ * 모든 태그 목록과 포스트 카운트 가져오기
+ */
+export async function getAllTags(): Promise<Array<Tag & { count: number }>> {
+  try {
+    // 모든 게시된 포스트 가져오기
+    const response = await notion.databases.query({
+      database_id: DATABASE_ID,
+      filter: {
+        property: 'status',
+        select: {
+          equals: 'Published',
+        },
+      },
+      page_size: 100, // 최대 100개까지 가져오기
+    })
+
+    // 태그별로 그룹화하고 카운트
+    const tagMap = new Map<string, { tag: Tag; count: number }>()
+    
+    response.results.forEach((page) => {
+      const post = transformNotionPageToPost(page as NotionPage)
+      post.tags.forEach((tag) => {
+        const existing = tagMap.get(tag.id)
+        if (existing) {
+          existing.count++
+        } else {
+          tagMap.set(tag.id, { tag, count: 1 })
+        }
+      })
+    })
+
+    // Map을 배열로 변환하고 카운트 기준으로 정렬
+    return Array.from(tagMap.values())
+      .map(({ tag, count }) => ({ ...tag, count }))
+      .sort((a, b) => b.count - a.count)
+  } catch (error) {
+    console.error('Error fetching all tags:', error)
     return []
   }
 }

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Image from 'next/image'
 import { getPostBySlug, getPostBlocks, getPublishedPosts } from '@/lib/notion'
 import { Metadata } from 'next'
 import ReactMarkdown from 'react-markdown'
@@ -10,7 +11,7 @@ import { Footer } from '@/components/footer'
 import { ScrollToTopButton } from '@/components/scroll-to-top-button'
 
 import { POSTS_CONFIG } from '@/config/constants'
-import { MESSAGES } from '@/config/messages'
+import { calculateWordCount, calculateReadingTimeFromText } from '@/lib/word-count'
 
 interface PostPageProps {
   params: Promise<{
@@ -54,6 +55,10 @@ export default async function PostPage({ params }: PostPageProps) {
 
   // 포스트 콘텐츠 가져오기
   const content = await getPostBlocks(post.id)
+  
+  // 실제 content 기반으로 읽기 시간과 단어 수 계산
+  const wordCount = content ? calculateWordCount(content) : POSTS_CONFIG.DEFAULT_WORD_COUNT
+  const readingTime = content ? calculateReadingTimeFromText(content) : post.readingTime
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,18 +66,52 @@ export default async function PostPage({ params }: PostPageProps) {
       <div className="container mx-auto mt-16 lg:mt-32 xl:relative px-4 sm:px-6 lg:px-8">
         <article>
           <header className="flex flex-col">
-            {/* 첫 번째 줄: 날짜, 작성자, 읽기 시간, 단어 수 */}
-            <div className="flex items-center gap-4 text-sm text-zinc-400 dark:text-zinc-500">
-              <time dateTime={post.publishedAt}>
-                {new Date(post.publishedAt).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </time>
-              <span>By {POSTS_CONFIG.DEFAULT_AUTHOR}</span>
-              <span>{MESSAGES.READING_TIME(post.readingTime)}</span>
-              <span>{POSTS_CONFIG.DEFAULT_WORD_COUNT} words</span>
+            {/* 작성자 정보와 메타 정보 */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+              {/* Author 정보 */}
+              <div className="flex items-center gap-3">
+                {post.author?.avatar ? (
+                  <Image
+                    src={post.author.avatar}
+                    alt={post.author.name || 'Author'}
+                    width={40}
+                    height={40}
+                    className="rounded-full"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center">
+                    <span className="text-zinc-400 font-medium">
+                      {(post.author?.name || POSTS_CONFIG.DEFAULT_AUTHOR).charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-zinc-200">
+                    {post.author?.name || POSTS_CONFIG.DEFAULT_AUTHOR}
+                  </span>
+                  {post.author?.email && (
+                    <span className="text-xs text-zinc-500">{post.author.email}</span>
+                  )}
+                </div>
+              </div>
+              
+              {/* 구분선 */}
+              <div className="hidden sm:block w-px h-8 bg-zinc-700"></div>
+              
+              {/* 메타 정보 */}
+              <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-400 dark:text-zinc-500">
+                <time dateTime={post.publishedAt}>
+                  {new Date(post.publishedAt).toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </time>
+                <span>•</span>
+                <span>{readingTime}분 읽기</span>
+                <span>•</span>
+                <span>{wordCount.toLocaleString()} words</span>
+              </div>
             </div>
 
             {/* 제목 - 더 크게 */}

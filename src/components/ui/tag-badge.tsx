@@ -1,4 +1,5 @@
 import * as React from 'react'
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { Tag } from '@/types/notion'
 
@@ -20,17 +21,19 @@ interface TagBadgeProps {
   tag: Tag
   size?: 'sm' | 'md'
   className?: string
+  clickable?: boolean
 }
 
-export function TagBadge({ tag, size = 'sm', className }: TagBadgeProps) {
+export function TagBadge({ tag, size = 'sm', className, clickable = false }: TagBadgeProps) {
   const colorClass = tagColorMap[tag.color] || tagColorMap.default
   const sizeClass = size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm'
 
-  return (
+  const badgeContent = (
     <span
       className={cn(
-        'inline-flex items-center rounded-full font-medium transition-all duration-200 cursor-default select-none',
+        'inline-flex items-center rounded-full font-medium transition-all duration-200 select-none',
         'border border-transparent',
+        clickable ? 'cursor-pointer hover:scale-105' : 'cursor-default',
         colorClass,
         sizeClass,
         className,
@@ -40,6 +43,16 @@ export function TagBadge({ tag, size = 'sm', className }: TagBadgeProps) {
       {tag.name}
     </span>
   )
+
+  if (clickable) {
+    return (
+      <Link href={`/tags/${tag.slug}`} onClick={(e) => e.stopPropagation()}>
+        {badgeContent}
+      </Link>
+    )
+  }
+
+  return badgeContent
 }
 
 interface TagListProps {
@@ -47,9 +60,10 @@ interface TagListProps {
   maxTags?: number
   size?: 'sm' | 'md'
   className?: string
+  clickable?: boolean
 }
 
-export function TagList({ tags, maxTags = 3, size = 'sm', className }: TagListProps) {
+export function TagList({ tags, maxTags = 3, size = 'sm', className, clickable = false }: TagListProps) {
   if (!tags || tags.length === 0) return null
 
   const displayTags = tags.slice(0, maxTags)
@@ -58,7 +72,7 @@ export function TagList({ tags, maxTags = 3, size = 'sm', className }: TagListPr
   return (
     <div className={cn('flex flex-wrap gap-1.5 items-center', className)}>
       {displayTags.map((tag) => (
-        <TagBadge key={tag.id} tag={tag} size={size} />
+        <TagBadge key={tag.id} tag={tag} size={size} clickable={clickable} />
       ))}
       {remainingCount > 0 && (
         <span

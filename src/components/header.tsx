@@ -28,6 +28,12 @@ export const Header = () => {
           >
             포스트
           </Link>
+          <Link 
+            href="/tags" 
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            태그
+          </Link>
         </nav>
 
         <ThemeToggle />
