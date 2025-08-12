@@ -34,8 +34,10 @@ export const MESSAGES = {
   PAGE_INFO: (current: number, total: number) => `${current} / ${total} 페이지`,
   
   // 포스트 정보
-  READING_TIME: (minutes: number) => `${minutes}분 읽기`,
-  WORD_COUNT: (count: number) => `${count} 단어`,
+  READING_TIME: '분 읽기',
+  WORD_COUNT: '단어',
+  READING_TIME_FUNC: (minutes: number) => `${minutes}분 읽기`,
+  WORD_COUNT_FUNC: (count: number) => `${count} 단어`,
   PUBLISHED_AT: (date: string) => `${date}에 게시됨`,
   UPDATED_AT: (date: string) => `${date}에 수정됨`,
   

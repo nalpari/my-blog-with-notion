@@ -11,6 +11,7 @@ import { Footer } from '@/components/footer'
 import { ScrollToTopButton } from '@/components/scroll-to-top-button'
 
 import { POSTS_CONFIG } from '@/config/constants'
+import { MESSAGES } from '@/config/messages'
 import { calculateWordCount, calculateReadingTimeFromText } from '@/lib/word-count'
 
 interface PostPageProps {
@@ -108,9 +109,9 @@ export default async function PostPage({ params }: PostPageProps) {
                   })}
                 </time>
                 <span>•</span>
-                <span>{readingTime}분 읽기</span>
+                <span>{readingTime}{MESSAGES.READING_TIME}</span>
                 <span>•</span>
-                <span>{wordCount.toLocaleString()} words</span>
+                <span>{wordCount.toLocaleString()} {MESSAGES.WORD_COUNT}</span>
               </div>
             </div>
 
