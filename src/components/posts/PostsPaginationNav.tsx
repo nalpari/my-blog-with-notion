@@ -43,17 +43,39 @@ export function PostsPaginationNav({
   }
 
   const getPageUrl = (page: number) => {
-    return page === 1 ? basePath : `${basePath}?page=${page}`
+    // basePath를 pathname과 query로 분리
+    const [pathname, queryString] = basePath.split('?')
+    const existingParams = new URLSearchParams(queryString || '')
+    
+    // 기존 쿼리 파라미터를 객체로 변환
+    const query: Record<string, string> = {}
+    existingParams.forEach((value, key) => {
+      if (key !== 'page') { // page 파라미터는 제외
+        query[key] = value
+      }
+    })
+    
+    // page가 1이 아닌 경우에만 page 파라미터 추가
+    if (page > 1) {
+      query.page = page.toString()
+    }
+    
+    // Next.js Link href 객체 형식 반환
+    return {
+      pathname,
+      query
+    }
   }
 
   return (
-    <div className="flex items-center justify-center gap-2 mt-8">
+    <nav aria-label="Pagination" className="flex items-center justify-center gap-2 mt-8">
       <Button
         variant="outline"
         size="sm"
         disabled={currentPage === 1}
         className="gap-1"
         asChild={currentPage !== 1}
+        aria-label="이전 페이지로 이동"
       >
         {currentPage !== 1 ? (
           <Link href={getPageUrl(currentPage - 1)}>
@@ -77,7 +99,7 @@ export function PostsPaginationNav({
               className="w-8 h-8 p-0"
               asChild
             >
-              <Link href={getPageUrl(1)}>1</Link>
+              <Link href={getPageUrl(1)} aria-label="1페이지로 이동">1</Link>
             </Button>
             {currentPage > 4 && (
               <span className="px-2 flex items-center text-muted-foreground">
@@ -94,11 +116,12 @@ export function PostsPaginationNav({
             size="sm"
             className="w-8 h-8 p-0"
             asChild={page !== currentPage}
+            aria-current={page === currentPage ? 'page' : undefined}
           >
             {page === currentPage ? (
-              <span>{page}</span>
+              <span aria-label={`현재 페이지, ${page}페이지`}>{page}</span>
             ) : (
-              <Link href={getPageUrl(page)}>{page}</Link>
+              <Link href={getPageUrl(page)} aria-label={`${page}페이지로 이동`}>{page}</Link>
             )}
           </Button>
         ))}
@@ -116,7 +139,7 @@ export function PostsPaginationNav({
               className="w-8 h-8 p-0"
               asChild
             >
-              <Link href={getPageUrl(totalPages)}>{totalPages}</Link>
+              <Link href={getPageUrl(totalPages)} aria-label={`마지막 페이지(${totalPages}페이지)로 이동`}>{totalPages}</Link>
             </Button>
           </>
         )}
@@ -128,6 +151,7 @@ export function PostsPaginationNav({
         disabled={currentPage === totalPages}
         className="gap-1"
         asChild={currentPage !== totalPages}
+        aria-label="다음 페이지로 이동"
       >
         {currentPage !== totalPages ? (
           <Link href={getPageUrl(currentPage + 1)}>
@@ -141,6 +165,6 @@ export function PostsPaginationNav({
           </>
         )}
       </Button>
-    </div>
+    </nav>
   )
 }

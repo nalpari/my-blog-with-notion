@@ -45,7 +45,7 @@ export default async function TagsPage() {
                   </p>
                 </div>
                 <TagCloud 
-                  tags={tags.sort((a, b) => a.name.localeCompare(b.name))} 
+                  tags={[...tags].sort((a, b) => a.name.localeCompare(b.name))} 
                   variant="list" 
                 />
               </section>

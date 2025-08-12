@@ -27,11 +27,11 @@ export function PostCard({ post, priority = false }: PostCardProps) {
           {post.coverImage && (
             <div className="relative h-48 w-full overflow-hidden">
               <Image
-                src={post.coverImage}
+                src={optimizeNotionImageUrl(post.coverImage) || post.coverImage}
                 alt={post.title}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-300"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                sizes={getImageSizes('card')}
                 priority={priority}
                 loading={priority ? "eager" : "lazy"}
                 placeholder="blur"

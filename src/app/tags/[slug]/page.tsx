@@ -22,7 +22,7 @@ export async function generateStaticParams() {
 }
 
 // 메타데이터 생성
-export async function generateMetadata({ params }: TagPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const { slug } = params
   const tags = await getAllTags()
   const tag = tags.find(t => t.slug === slug)
@@ -41,8 +41,12 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
 
 export default async function TagPage({ params, searchParams }: TagPageProps) {
   const { slug } = params
-  const { page = '1' } = searchParams
-  const currentPage = parseInt(page, 10)
+  
+  // page 파라미터를 견고하게 처리
+  const pageParam = searchParams.page
+  const pageValue = Array.isArray(pageParam) ? pageParam[0] : pageParam
+  const parsedPage = parseInt(pageValue || '1', 10)
+  const currentPage = isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage
   const postsPerPage = 9
 
   // 태그 정보 가져오기
