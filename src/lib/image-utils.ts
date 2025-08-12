@@ -95,8 +95,8 @@ export function getImagePriority(index: number, threshold: number = 3): boolean 
  */
 export function getImageCacheHeaders(): Record<string, string> {
   return {
-    'Cache-Control': 'public, max-age=31536000, immutable', // 1년 캐싱
-    'CDN-Cache-Control': 'max-age=31536000',
-    'Vercel-CDN-Cache-Control': 'max-age=31536000',
+    'Cache-Control': 'public, max-age=2592000, stale-while-revalidate=86400, immutable', // 30일 캐싱 + 1일 stale-while-revalidate
+    'CDN-Cache-Control': 'max-age=2592000, stale-while-revalidate=86400',
+    'Vercel-CDN-Cache-Control': 'max-age=2592000, stale-while-revalidate=86400',
   }
 }

@@ -426,32 +426,43 @@ export async function getPostsByTag(
  */
 export async function getAllTags(): Promise<Array<Tag & { count: number }>> {
   try {
-    // 모든 게시된 포스트 가져오기
-    const response = await notion.databases.query({
-      database_id: DATABASE_ID,
-      filter: {
-        property: 'status',
-        select: {
-          equals: 'Published',
-        },
-      },
-      page_size: 100, // 최대 100개까지 가져오기
-    })
-
     // 태그별로 그룹화하고 카운트
     const tagMap = new Map<string, { tag: Tag; count: number }>()
     
-    response.results.forEach((page) => {
-      const post = transformNotionPageToPost(page as NotionPage)
-      post.tags.forEach((tag) => {
-        const existing = tagMap.get(tag.id)
-        if (existing) {
-          existing.count++
-        } else {
-          tagMap.set(tag.id, { tag, count: 1 })
-        }
+    // 페이지네이션을 사용하여 모든 포스트 가져오기
+    let hasMore = true
+    let startCursor: string | undefined = undefined
+    
+    while (hasMore) {
+      const response = await notion.databases.query({
+        database_id: DATABASE_ID,
+        filter: {
+          property: 'status',
+          select: {
+            equals: 'Published',
+          },
+        },
+        page_size: 100, // 페이지당 100개
+        start_cursor: startCursor,
       })
-    })
+      
+      // 현재 페이지의 결과 처리
+      response.results.forEach((page) => {
+        const post = transformNotionPageToPost(page as NotionPage)
+        post.tags.forEach((tag) => {
+          const existing = tagMap.get(tag.id)
+          if (existing) {
+            existing.count++
+          } else {
+            tagMap.set(tag.id, { tag, count: 1 })
+          }
+        })
+      })
+      
+      // 다음 페이지 준비
+      hasMore = response.has_more
+      startCursor = response.next_cursor || undefined
+    }
 
     // Map을 배열로 변환하고 카운트 기준으로 정렬
     return Array.from(tagMap.values())
