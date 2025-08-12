@@ -9,8 +9,8 @@ import { Footer } from '@/components/footer'
 import type { Tag } from '@/types/notion'
 
 interface TagPageProps {
-  params: Promise<{ slug: string }>
-  searchParams: Promise<{ page?: string }>
+  params: { slug: string }
+  searchParams: { page?: string }
 }
 
 // 정적 파라미터 생성 (SSG)
@@ -23,7 +23,7 @@ export async function generateStaticParams() {
 
 // 메타데이터 생성
 export async function generateMetadata({ params }: TagPageProps): Promise<Metadata> {
-  const { slug } = await params
+  const { slug } = params
   const tags = await getAllTags()
   const tag = tags.find(t => t.slug === slug)
 
@@ -40,8 +40,8 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
 }
 
 export default async function TagPage({ params, searchParams }: TagPageProps) {
-  const { slug } = await params
-  const { page = '1' } = await searchParams
+  const { slug } = params
+  const { page = '1' } = searchParams
   const currentPage = parseInt(page, 10)
   const postsPerPage = 9
 
