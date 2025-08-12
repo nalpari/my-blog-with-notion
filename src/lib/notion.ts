@@ -55,6 +55,9 @@ const n2m = new NotionToMarkdown({ notionClient: notion })
 // 데이터베이스 ID
 const DATABASE_ID = process.env.NOTION_DATABASE_ID!
 
+// 태그 슬러그 → 이름 매핑 캐시
+let tagSlugToNameCache: Map<string, string> | null = null
+
 /**
  * 노션 Rich Text를 일반 텍스트로 변환
  */
@@ -108,15 +111,27 @@ function extractMultiSelectProperty(multiSelect: NotionSelect[]): Tag[] {
 
 /**
  * 노션 People 프로퍼티를 Author로 변환
+ * @param people - 노션 People 속성 배열
+ * @param allowEmail - 이메일 노출 허용 여부 (기본값: false)
+ * @returns Author 객체 또는 null
  */
-function extractAuthorProperty(people: NotionPerson[]): Author | null {
+function extractAuthorProperty(people: NotionPerson[], allowEmail: boolean = false): Author | null {
   if (!people || !Array.isArray(people) || people.length === 0) return null
 
   const person = people[0]
+  
+  // person 타입이 'person'인 경우만 처리
+  if (person.type !== 'person') {
+    return null
+  }
+  
+  // 환경 변수로 이메일 노출 제어 (우선순위가 높음)
+  const shouldExposeEmail = process.env.EXPOSE_PERSON_EMAIL === 'true' || allowEmail
+  
   return {
     id: person.id || '',
     name: person.name || 'Unknown Author',
-    email: person.person?.email,
+    email: shouldExposeEmail ? person.person?.email : null, // 조건부 이메일 노출
     avatar: person.avatar_url,
   }
 }
@@ -170,7 +185,8 @@ function transformNotionPageToPost(page: NotionPage): Post {
   const publishedAt = properties.publishedAt?.date?.start || createdAt
 
   // 작성자 추출 (대문자 A로 수정)
-  const author = extractAuthorProperty(properties.Author?.people || [])
+  // 이메일 노출은 환경 변수로 제어 (기본값: false)
+  const author = extractAuthorProperty(properties.Author?.people || [], false)
   
   // 읽기 시간 추출
   const readingTime = properties.readingTime?.number || 5
@@ -367,14 +383,42 @@ export async function getPostsByCategory(
 }
 
 /**
+ * 태그 슬러그를 노션 태그 이름으로 변환
+ * 캐시를 사용하여 반복적인 쿼리 방지
+ */
+async function getTagNameFromSlug(slug: string): Promise<string | null> {
+  // 캐시가 없으면 초기화
+  if (!tagSlugToNameCache) {
+    const allTags = await getAllTags()
+    tagSlugToNameCache = new Map()
+    
+    allTags.forEach(tag => {
+      tagSlugToNameCache!.set(tag.slug, tag.name)
+    })
+  }
+  
+  return tagSlugToNameCache.get(slug) || null
+}
+
+/**
  * 태그별 포스트 가져오기 (페이지네이션 지원)
+ * @param tagSlug - 태그 슬러그 (URL에서 사용)
  */
 export async function getPostsByTag(
-  tagName: string,
+  tagSlug: string,
   limit: number = 10,
   startCursor?: string,
 ): Promise<NotionDatabaseResponse> {
   try {
+    // 슬러그를 노션 태그 이름으로 변환
+    const tagName = await getTagNameFromSlug(tagSlug)
+    
+    if (!tagName) {
+      // 매핑을 찾을 수 없으면 빈 결과 반환
+      console.warn(`Tag slug "${tagSlug}" not found in mapping`)
+      return { posts: [], hasMore: false, nextCursor: undefined }
+    }
+    
     const response = await notion.databases.query({
       database_id: DATABASE_ID,
       filter: {
@@ -446,17 +490,32 @@ export async function getAllTags(): Promise<Array<Tag & { count: number }>> {
         start_cursor: startCursor,
       })
       
-      // 현재 페이지의 결과 처리
+      // 현재 페이지의 결과 처리 (태그 정보만 추출)
       response.results.forEach((page) => {
-        const post = transformNotionPageToPost(page as NotionPage)
-        post.tags.forEach((tag) => {
-          const existing = tagMap.get(tag.id)
-          if (existing) {
-            existing.count++
-          } else {
-            tagMap.set(tag.id, { tag, count: 1 })
-          }
-        })
+        // page를 NotionPage로 타입 캐스팅
+        const notionPage = page as NotionPage
+        const properties = notionPage.properties as NotionPageProperties
+        
+        // tags 속성 직접 접근 (변환 없이)
+        const tags = properties.tags?.multi_select
+        
+        if (tags && Array.isArray(tags)) {
+          tags.forEach((notionTag) => {
+            const tag: Tag = {
+              id: notionTag.id || '',
+              name: notionTag.name || '',
+              slug: notionTag.name?.toLowerCase().replace(/\s+/g, '-') || '',
+              color: notionTag.color || 'default',
+            }
+            
+            const existing = tagMap.get(tag.id)
+            if (existing) {
+              existing.count++
+            } else {
+              tagMap.set(tag.id, { tag, count: 1 })
+            }
+          })
+        }
       })
       
       // 다음 페이지 준비

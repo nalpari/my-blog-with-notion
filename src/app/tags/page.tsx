@@ -14,6 +14,9 @@ export default async function TagsPage() {
   
   // 전체 포스트 수 계산
   const totalPosts = tags.reduce((sum, tag) => sum + tag.count, 0)
+  
+  // 상위 10개 태그 추출 (카운트 내림차순 정렬 후 10개 슬라이스)
+  const topTags = tags.slice().sort((a, b) => b.count - a.count).slice(0, 10)
 
   return (
     <div className="min-h-screen bg-background">
@@ -33,7 +36,7 @@ export default async function TagsPage() {
                     가장 많이 사용된 태그들입니다
                   </p>
                 </div>
-                <TagCloud tags={tags} maxTags={10} variant="cloud" />
+                <TagCloud tags={topTags} variant="cloud" />
               </section>
 
               {/* 모든 태그 섹션 */}

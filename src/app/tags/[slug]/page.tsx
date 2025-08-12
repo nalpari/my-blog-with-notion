@@ -57,9 +57,9 @@ export default async function TagPage({ params, searchParams }: TagPageProps) {
     notFound()
   }
 
-  // 태그로 찾기 위해 이름 사용
+  // 태그로 찾기 위해 슬러그 사용 (getPostsByTag가 내부적으로 이름으로 변환)
   const { posts, hasMore } = await getPostsByTag(
-    currentTag.name,
+    slug,
     postsPerPage,
     currentPage > 1 ? String((currentPage - 1) * postsPerPage) : undefined
   )
