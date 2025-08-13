@@ -19,37 +19,27 @@ export function optimizeNotionImageUrl(
 ): string | undefined {
   if (!url) return undefined
 
-  const { width = 1200, quality = 75, format = 'webp' } = options
-
-  // 노션 S3 이미지 URL 패턴
-  if (url.includes('prod-files-secure.s3')) {
-    const urlObj = new URL(url)
+  try {
+    // Vercel 배포 환경에서는 원본 URL을 그대로 사용
+    // Next.js Image 컴포넌트가 자동으로 최적화 처리
     
-    // AWS S3 서명된 URL인 경우 파라미터 유지
-    if (urlObj.searchParams.has('X-Amz-Signature')) {
-      return url // 서명된 URL은 수정하지 않음
+    // 노션 S3 이미지 URL 패턴
+    if (url.includes('prod-files-secure.s3')) {
+      // AWS S3 서명된 URL은 그대로 반환
+      // Vercel이 자체적으로 최적화 처리
+      return url
     }
-    
-    // 일반 S3 URL인 경우 최적화 파라미터 추가
-    urlObj.searchParams.set('w', width.toString())
-    urlObj.searchParams.set('q', quality.toString())
-    urlObj.searchParams.set('fm', format)
-    
-    return urlObj.toString()
-  }
 
-  // Unsplash 이미지 최적화
-  if (url.includes('images.unsplash.com')) {
-    const urlObj = new URL(url)
-    urlObj.searchParams.set('w', width.toString())
-    urlObj.searchParams.set('q', quality.toString())
-    urlObj.searchParams.set('auto', 'format')
-    urlObj.searchParams.set('fit', 'crop')
-    
-    return urlObj.toString()
-  }
+    // Unsplash 이미지는 그대로 반환
+    if (url.includes('images.unsplash.com')) {
+      return url
+    }
 
-  return url
+    return url
+  } catch (error) {
+    console.error('Error optimizing image URL:', error)
+    return url // 에러 발생 시 원본 URL 반환
+  }
 }
 
 /**
