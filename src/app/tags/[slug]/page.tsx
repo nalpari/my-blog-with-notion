@@ -6,11 +6,11 @@ import { PostsPaginationNav } from '@/components/posts/PostsPaginationNav'
 import { TagPageHeader } from '@/components/tags/TagCloud'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
-import type { Tag } from '@/types/notion'
+
 
 interface TagPageProps {
-  params: { slug: string }
-  searchParams: { page?: string }
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ page?: string }>
 }
 
 // 정적 파라미터 생성 (SSG)
@@ -22,8 +22,8 @@ export async function generateStaticParams() {
 }
 
 // 메타데이터 생성
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const { slug } = params
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
   const tags = await getAllTags()
   const tag = tags.find(t => t.slug === slug)
 
@@ -40,10 +40,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function TagPage({ params, searchParams }: TagPageProps) {
-  const { slug } = params
+  const { slug } = await params
+  const resolvedSearchParams = await searchParams
   
   // page 파라미터를 견고하게 처리
-  const pageParam = searchParams.page
+  const pageParam = resolvedSearchParams.page
   const pageValue = Array.isArray(pageParam) ? pageParam[0] : pageParam
   const parsedPage = parseInt(pageValue || '1', 10)
   const currentPage = isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage
@@ -58,7 +59,7 @@ export default async function TagPage({ params, searchParams }: TagPageProps) {
   }
 
   // 태그로 찾기 위해 슬러그 사용 (getPostsByTag가 내부적으로 이름으로 변환)
-  const { posts, hasMore } = await getPostsByTag(
+  const { posts } = await getPostsByTag(
     slug,
     postsPerPage,
     currentPage > 1 ? String((currentPage - 1) * postsPerPage) : undefined

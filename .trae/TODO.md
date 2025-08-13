@@ -1,7 +1,8 @@
 # TODO:
 
-- [x] 1: 포스트 상세 페이지에서 현재 readingTime 사용 방식 확인 (priority: High)
-- [x] 2: calculateReadingTimeFromText 함수를 사용하여 실제 content 기반 읽기 시간 계산 구현 (priority: High)
-- [x] 3: 단어 수도 실제 content 기반으로 정확하게 계산하도록 수정 (priority: High)
-- [x] 4: 기존 post.readingTime 대신 계산된 값 사용하도록 코드 수정 (priority: High)
-- [x] 5: 수정된 코드 테스트 및 확인 (priority: Medium)
+- [x] 1: 빌드 명령어 실행하여 오류 확인 (pnpm build 또는 npm run build) (priority: High)
+- [x] 2: TypeScript 타입 오류 확인 및 수정 (priority: High)
+- [x] 4: 최근 수정한 포스트 상세 페이지 코드 검토 (priority: High)
+- [x] 3: ESLint 오류 확인 및 수정 (priority: Medium)
+- [x] 5: 누락된 import나 잘못된 경로 확인 (priority: Medium)
+- [x] 6: 개발 서버 실행하여 실제 동작 확인 (priority: Medium)

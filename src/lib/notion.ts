@@ -131,7 +131,7 @@ function extractAuthorProperty(people: NotionPerson[], allowEmail: boolean = fal
   return {
     id: person.id || '',
     name: person.name || 'Unknown Author',
-    email: shouldExposeEmail ? person.person?.email : null, // 조건부 이메일 노출
+    email: shouldExposeEmail ? person.person?.email : undefined, // 조건부 이메일 노출
     avatar: person.avatar_url,
   }
 }
