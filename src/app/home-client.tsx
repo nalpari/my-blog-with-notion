@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import type { Post } from '@/types/notion'
 import { PostCard } from '@/components/post-card'
@@ -44,83 +44,77 @@ export function HomeClient() {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const controllerRef = useRef<AbortController | null>(null)
 
-  useEffect(() => {
-    const controller = new AbortController()
-
-    const fetchLatestPosts = async () => {
-      setLoading(true)
-      setError(null)
+  // 공통 fetch 헬퍼 함수 - AbortSignal을 매개변수로 받음
+  const fetchPosts = async (signal: AbortSignal) => {
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const response = await fetch('/api/posts?limit=9', {
+        signal
+      })
       
-      try {
-        const response = await fetch('/api/posts?limit=9', {
-          signal: controller.signal
-        })
-        
-        if (!response.ok) {
-          throw new Error(`서버 응답 오류: ${response.status}`)
-        }
-        
-        const data = await response.json()
-        
-        if (!controller.signal.aborted) {
-          setPosts(data.posts)
-          setError(null)
-        }
-      } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
-          return
-        }
-        
-        console.error('포스트를 불러오는 중 오류가 발생했습니다:', error)
-        
-        if (!controller.signal.aborted) {
-          setError(error instanceof Error ? error.message : '포스트를 불러오는데 실패했습니다')
-          setPosts([])
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false)
-        }
+      if (!response.ok) {
+        throw new Error(`서버 응답 오류: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      
+      if (!signal.aborted) {
+        setPosts(data.posts)
+        setError(null)
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return
+      }
+      
+      console.error('포스트를 불러오는 중 오류가 발생했습니다:', error)
+      
+      if (!signal.aborted) {
+        setError(error instanceof Error ? error.message : '포스트를 불러오는데 실패했습니다')
+        setPosts([])
+      }
+    } finally {
+      if (!signal.aborted) {
+        setLoading(false)
       }
     }
+  }
 
-    fetchLatestPosts()
+  useEffect(() => {
+    // 새 컨트롤러 생성 전 기존 요청 취소
+    if (controllerRef.current) {
+      controllerRef.current.abort()
+    }
+    
+    const controller = new AbortController()
+    controllerRef.current = controller
+    
+    fetchPosts(controller.signal)
 
+    // 컴포넌트 언마운트 시 정리
     return () => {
       controller.abort()
+      if (controllerRef.current === controller) {
+        controllerRef.current = null
+      }
     }
   }, [])
 
   const handleRetry = () => {
-    const controller = new AbortController()
-    
-    const retry = async () => {
-      setLoading(true)
-      setError(null)
-      
-      try {
-        const response = await fetch('/api/posts?limit=9', {
-          signal: controller.signal
-        })
-        
-        if (!response.ok) {
-          throw new Error(`서버 응답 오류: ${response.status}`)
-        }
-        
-        const data = await response.json()
-        setPosts(data.posts)
-        setError(null)
-      } catch (error) {
-        if (error instanceof Error && error.name !== 'AbortError') {
-          setError(error.message)
-        }
-      } finally {
-        setLoading(false)
-      }
+    // 이전 요청이 있다면 취소
+    if (controllerRef.current) {
+      controllerRef.current.abort()
     }
     
-    retry()
+    // 새 컨트롤러 생성 및 저장
+    const controller = new AbortController()
+    controllerRef.current = controller
+    
+    fetchPosts(controller.signal)
   }
 
   if (loading) {

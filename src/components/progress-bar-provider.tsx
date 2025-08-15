@@ -36,17 +36,39 @@ export function ProgressBarProvider({ children }: { children: React.ReactNode })
 
     // 링크 클릭 이벤트 감지
     const handleClick = (e: MouseEvent) => {
+      // 왼쪽 버튼이 아니거나 modifier 키가 눌린 경우 무시
+      if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
+        return
+      }
+      
       const target = e.target as HTMLElement
       const link = target.closest('a')
       
-      if (link && link.href && !link.target && !link.download) {
+      // 타입 가드: HTMLAnchorElement인지 확인
+      if (!(link instanceof HTMLAnchorElement)) {
+        return
+      }
+      
+      // 새 탭/창에서 열거나 다운로드인 경우 무시
+      if (link.target || link.download) {
+        return
+      }
+      
+      // href가 없는 경우 무시
+      if (!link.href) {
+        return
+      }
+      
+      try {
         const url = new URL(link.href)
         const currentUrl = new URL(window.location.href)
         
-        // 같은 도메인 내 페이지 이동인 경우만 로딩 표시
+        // 같은 도메인 내 다른 경로로 이동인 경우만 로딩 표시
         if (url.origin === currentUrl.origin && url.pathname !== currentUrl.pathname) {
           handleStart()
         }
+      } catch {
+        // URL 파싱 실패 시 무시
       }
     }
 
