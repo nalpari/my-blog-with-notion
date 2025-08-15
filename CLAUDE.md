@@ -4,6 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - 답변과 추론과정은 항상 한국어로 작성해주세요.
 - 커밋 메세지는 항상 fix, feat, chore, style, test, docs, refactor 등 접두사는 영어로 하고, 나머지 커밋 내용은 한글로 작성해줘.
+- 검증 과정이나 테스트 용도로 3000포트 서버를 작동한 경우 마지막에 항상 3000포트 서비스 중지해줘.
 
 ## Development Commands
 
@@ -20,6 +21,7 @@ npx tsc --noEmit     # Run TypeScript type checking
 This is a Next.js 15 blog application that uses **Notion as a headless CMS** with a Linear.app-inspired design system.
 
 ### Core Stack
+
 - **Next.js 15.4.5** with App Router and Turbopack
 - **React 19.1.0** with TypeScript 5.9.2 (strict mode)
 - **Notion API** (@notionhq/client) for content management
@@ -59,12 +61,14 @@ src/
 ### Notion CMS Integration
 
 **Required Environment Variables:**
+
 ```bash
 NOTION_TOKEN=secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 **Notion Database Schema Requirements:**
+
 - `title` (Title): Post title
 - `slug` (Text): URL slug for the post
 - `excerpt` (Text): Post summary (150 chars recommended)
@@ -77,6 +81,7 @@ NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 - `readingTime` (Number): Estimated reading time in minutes
 
 **Key API Functions** in `src/lib/notion.ts`:
+
 - `getPublishedPosts(limit, cursor?, search?, category?)` - Paginated posts with filtering
 - `getLatestPosts()` - Homepage featured posts
 - `getPostBySlug(slug)` - Individual post data
@@ -95,16 +100,19 @@ NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ### Key Design Patterns
 
 **Component Organization:**
+
 - Shared components extracted to reduce duplication (e.g., `PostCard`)
 - Large components split into smaller, focused components
 - Custom hooks for data fetching logic separation
 
 **Configuration Management:**
+
 - Constants centralized in `src/config/constants.ts`
 - UI messages in `src/config/messages.ts`
 - Environment variables for sensitive data
 
 **Type Safety:**
+
 - No `any` types allowed (use specific types or `unknown`)
 - Notion API responses typed with `NotionPageProperties`
 - Next.js 15 async params handling: `params: Promise<{ slug: string }>`
@@ -112,6 +120,7 @@ NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ### Image Optimization
 
 Configured domains in `next.config.ts`:
+
 - `prod-files-secure.s3.us-west-2.amazonaws.com` (Notion files)
 - `s3.us-west-2.amazonaws.com` (Notion S3)
 - `images.unsplash.com` (External images)
@@ -119,6 +128,7 @@ Configured domains in `next.config.ts`:
 - `lh3.googleusercontent.com` (Google profile images)
 
 **Caching Strategy:**
+
 - 30-day minimum cache TTL
 - WebP/AVIF format support
 - Blur placeholder for improved UX
@@ -135,15 +145,18 @@ Components are installed to `src/components/ui/` with CSS variables for theming.
 ### Recent Features
 
 **Tag System:**
+
 - Tag Cloud and Tag List views at `/tags`
 - Tag-filtered posts at `/tags/[slug]`
 - Clickable tags throughout the UI
 
 **Author System:**
+
 - Author information display with avatar and email
 - Notion People property integration (property name must be "Author" with capital A)
 
 **Image Optimization:**
+
 - Custom image utilities in `src/lib/image-utils.ts`
 - Automatic optimization for Notion and Unsplash images
 - Responsive image sizing based on viewport
@@ -151,14 +164,17 @@ Components are installed to `src/components/ui/` with CSS variables for theming.
 ### Common Issues & Solutions
 
 **Author Data Not Retrieved:**
+
 - Ensure Notion property is named "Author" (capital A), not "author"
 - The API uses case-sensitive property names
 
 **DOM Nesting Errors:**
+
 - Avoid nesting interactive elements (Links, Buttons)
 - PostCard component has been refactored to prevent these issues
 
 **TypeScript Strict Mode:**
+
 - All variables must be properly typed
 - Use specific types instead of `any`
 - Handle undefined/null cases explicitly
