@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from 'next-themes'
+import { ProgressBarProvider } from '@/components/progress-bar-provider'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -83,9 +84,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="relative flex min-h-screen flex-col">
-            <div className="flex-1">{children}</div>
-          </div>
+          <ProgressBarProvider>
+            <div className="relative flex min-h-screen flex-col">
+              <div className="flex-1">{children}</div>
+            </div>
+          </ProgressBarProvider>
         </ThemeProvider>
       </body>
     </html>
