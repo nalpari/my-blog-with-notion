@@ -1,15 +1,11 @@
 'use client'
 
-import {
-  Card,
-  CardHeader,
-  CardContent,
-} from '@/components/ui/card'
+import { Card, CardHeader, CardContent } from '@/components/ui/card'
 
 export function PostsLoading() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+      {[1, 2, 3, 4, 5, 6].map((i) => (
         <Card key={i} className="overflow-hidden p-0">
           <div className="relative h-48 w-full bg-muted animate-pulse" />
           <CardHeader className="p-6 pb-4">

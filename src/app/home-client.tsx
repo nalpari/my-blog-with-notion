@@ -6,16 +6,12 @@ import type { Post } from '@/types/notion'
 import { PostCard } from '@/components/post-card'
 import { MESSAGES } from '@/config/messages'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardHeader,
-  CardContent,
-} from '@/components/ui/card'
+import { Card, CardHeader, CardContent } from '@/components/ui/card'
 
 function PostsLoading() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+      {[1, 2, 3, 4, 5, 6].map((i) => (
         <Card key={i} className="overflow-hidden p-0">
           <div className="relative h-48 w-full bg-muted animate-pulse" />
           <CardHeader className="p-6 pb-4">
@@ -50,18 +46,18 @@ export function HomeClient() {
   const fetchPosts = async (signal: AbortSignal) => {
     setLoading(true)
     setError(null)
-    
+
     try {
       const response = await fetch('/api/posts?limit=9', {
-        signal
+        signal,
       })
-      
+
       if (!response.ok) {
         throw new Error(`서버 응답 오류: ${response.status}`)
       }
-      
+
       const data = await response.json()
-      
+
       if (!signal.aborted) {
         setPosts(data.posts)
         setError(null)
@@ -70,11 +66,15 @@ export function HomeClient() {
       if (error instanceof Error && error.name === 'AbortError') {
         return
       }
-      
+
       console.error('포스트를 불러오는 중 오류가 발생했습니다:', error)
-      
+
       if (!signal.aborted) {
-        setError(error instanceof Error ? error.message : '포스트를 불러오는데 실패했습니다')
+        setError(
+          error instanceof Error
+            ? error.message
+            : '포스트를 불러오는데 실패했습니다',
+        )
         setPosts([])
       }
     } finally {
@@ -89,10 +89,10 @@ export function HomeClient() {
     if (controllerRef.current) {
       controllerRef.current.abort()
     }
-    
+
     const controller = new AbortController()
     controllerRef.current = controller
-    
+
     fetchPosts(controller.signal)
 
     // 컴포넌트 언마운트 시 정리
@@ -109,11 +109,11 @@ export function HomeClient() {
     if (controllerRef.current) {
       controllerRef.current.abort()
     }
-    
+
     // 새 컨트롤러 생성 및 저장
     const controller = new AbortController()
     controllerRef.current = controller
-    
+
     fetchPosts(controller.signal)
   }
 
@@ -127,9 +127,7 @@ export function HomeClient() {
         <p className="text-muted-foreground mb-4">
           {MESSAGES.ERROR_LOADING_POSTS}
         </p>
-        <p className="text-sm text-muted-foreground mb-4">
-          {error}
-        </p>
+        <p className="text-sm text-muted-foreground mb-4">{error}</p>
         <Button variant="outline" onClick={handleRetry}>
           다시 시도
         </Button>
@@ -140,9 +138,7 @@ export function HomeClient() {
   if (posts.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">
-          {MESSAGES.NO_POSTS}
-        </p>
+        <p className="text-muted-foreground">{MESSAGES.NO_POSTS}</p>
       </div>
     )
   }
@@ -154,7 +150,7 @@ export function HomeClient() {
           <PostCard key={post.id} post={post} priority={index === 0} />
         ))}
       </div>
-      
+
       <div className="text-center mt-12">
         <Button variant="outline" size="lg" className="gap-2" asChild>
           <Link href="/posts">
