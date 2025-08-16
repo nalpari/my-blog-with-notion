@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, createContext, useContext } from 'react'
+import { useEffect, useState, createContext, useContext, Suspense } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { ProgressBar } from './progress-bar'
 
@@ -16,7 +16,7 @@ const ProgressBarContext = createContext<ProgressBarContextValue>({
 
 export const useProgressBar = () => useContext(ProgressBarContext)
 
-export function ProgressBarProvider({ children }: { children: React.ReactNode }) {
+function ProgressBarProviderInner({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false)
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -88,5 +88,15 @@ export function ProgressBarProvider({ children }: { children: React.ReactNode })
       <ProgressBar isLoading={isLoading} />
       {children}
     </ProgressBarContext.Provider>
+  )
+}
+
+export function ProgressBarProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={null}>
+      <ProgressBarProviderInner>
+        {children}
+      </ProgressBarProviderInner>
+    </Suspense>
   )
 }
