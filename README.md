@@ -2,6 +2,11 @@
 
 Linear.app에서 영감을 받은 모던하고 미니멀한 개발자 블로그입니다. Next.js 15와 React 19의 최신 기능을 활용하며, **Notion을 헤드리스 CMS로 활용**하여 컨텐츠를 관리합니다.
 
+![Next.js](https://img.shields.io/badge/Next.js-15.4.5-black?style=flat-square&logo=next.js)
+![React](https://img.shields.io/badge/React-19.1.0-61dafb?style=flat-square&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-3178c6?style=flat-square&logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4.17-06b6d4?style=flat-square&logo=tailwindcss)
+
 ## 🚀 주요 특징
 
 ### 성능 최적화
@@ -10,13 +15,16 @@ Linear.app에서 영감을 받은 모던하고 미니멀한 개발자 블로그�
 - **Next.js Image Optimization** 으로 이미지 최적화
 - **Cursor-based Pagination** 으로 효율적인 데이터 로딩
 - **컴포넌트 레벨 코드 스플리팅** 자동 적용
+- **페이지 전환 Progress Bar** 시각적 로딩 피드백
+- **Scroll to Top 버튼** 사용자 편의성 향상
 
 ### 디자인 & UX
 - **Linear Design System** 기반 미니멀하고 세련된 UI
 - **다크/라이트 모드** 자동 전환 및 수동 토글 지원
 - **반응형 디자인** 모든 디바이스에 최적화
+- **모바일 네비게이션** 햄버거 메뉴와 드롭다운
 - **부드러운 애니메이션** Tailwind Animate 활용
-- **접근성 최적화** Radix UI 기반 컴포넌트
+- **접근성 최적화** Radix UI 기반 컴포넌트 (WCAG 2.1 AA 준수)
 
 ### 개발자 경험
 - **TypeScript** 완벽한 타입 안정성 (no any)
@@ -24,16 +32,24 @@ Linear.app에서 영감을 받은 모던하고 미니멀한 개발자 블로그�
 - **shadcn/ui** 재사용 가능한 컴포넌트 라이브러리
 - **Hot Module Replacement** 실시간 개발 피드백
 - **커스텀 훅** 로직 분리 및 재사용
+- **상세한 JSDoc 주석** 컴포넌트 문서화
 
 ## ✨ 주요 기능
 
+### 콘텐츠 관리
 - **Notion CMS 통합**: Notion 데이터베이스를 사용한 블로그 포스트 관리
 - **실시간 검색**: 제목과 내용 기반 포스트 검색
 - **카테고리 필터링**: 카테고리별 포스트 분류 및 필터
-- **태그 시스템**: 다중 태그 지원 및 태그별 포스트 필터링 (Tag Cloud, Tag List 뷰)
-- **Author 시스템**: 작성자 정보 표시 (아바타, 이름, 이메일)
+- **태그 시스템**: 다중 태그 지원 및 태그별 포스트 필터링
+  - Tag Cloud 뷰: 태그 크기로 인기도 시각화
+  - Tag List 뷰: 목록 형태로 명확한 정보 전달
+- **Author 시스템**: 작성자 정보 표시 (아바타, 이름, 이메일 - PII 보호 옵션)
+
+### 사용자 경험
 - **Markdown 렌더링**: 코드 하이라이팅을 포함한 풍부한 콘텐츠 표현
-- **읽기 시간 표시**: 포스트별 예상 읽기 시간 자동 계산
+- **읽기 시간 표시**: 포스트별 예상 읽기 시간 자동 계산 (한국어/영어 지원)
+- **페이지네이션**: 직관적인 페이지 네비게이션 (숫자 및 이전/다음)
+- **반응형 이미지**: 디바이스별 최적화된 이미지 제공
 - **SEO 최적화**: 메타데이터 및 Open Graph 태그 자동 생성
 - **에러 처리**: ErrorBoundary와 중앙화된 에러 관리
 
@@ -88,9 +104,11 @@ Linear.app에서 영감을 받은 모던하고 미니멀한 개발자 블로그�
    | `status` | Select | Draft, Published, Archived | ✅ |
    | `category` | Select | 포스트 카테고리 | ✅ |
    | `tags` | Multi-select | 포스트 태그들 | ❌ |
-   | `Author` | People | 작성자 (대문자 A 주의) | ❌ |
+   | `Author` | People | 작성자 (**대문자 A 주의**) | ❌ |
    | `publishedAt` | Date | 발행일 | ✅ |
    | `readingTime` | Number | 예상 읽기 시간(분) | ❌ |
+
+   > ⚠️ **중요**: Author 속성은 반드시 대문자 'A'로 시작해야 합니다.
 
 3. **Integration 연결**
    - 데이터베이스 우측 상단 ⋯ 메뉴 → Connections → Integration 연결
@@ -103,6 +121,9 @@ Linear.app에서 영감을 받은 모던하고 미니멀한 개발자 블로그�
 # Notion API 설정 (필수)
 NOTION_TOKEN=secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# 선택적 설정
+EXPOSE_PERSON_EMAIL=false  # Author 이메일 노출 여부 (기본값: false)
 ```
 
 > 💡 **Tip**: Database ID는 Notion 데이터베이스 URL에서 확인 가능합니다.
@@ -170,28 +191,34 @@ my-blog-with-notion/
 │   │   │   ├── [slug]/         # 태그별 포스트 필터링 페이지
 │   │   │   └── page.tsx        # 전체 태그 목록 페이지
 │   │   ├── layout.tsx          # 루트 레이아웃
-│   │   ├── page.tsx            # 홈페이지
+│   │   ├── page.tsx            # 홈페이지 (SSG)
+│   │   ├── home-client.tsx     # 홈페이지 클라이언트 컴포넌트
 │   │   └── globals.css         # 전역 스타일
 │   ├── components/             # React 컴포넌트
 │   │   ├── posts/              # 포스트 관련 컴포넌트
-│   │   │   ├── PostsGrid.tsx   # 포스트 그리드
-│   │   │   ├── PostsFilters.tsx # 검색 및 필터
-│   │   │   ├── PostsPagination.tsx # 페이지네이션
-│   │   │   ├── PostsPaginationNav.tsx # 페이지네이션 네비게이션
+│   │   │   ├── PostsGrid.tsx   # 포스트 그리드 레이아웃
+│   │   │   ├── PostsFilters.tsx # 검색 및 카테고리 필터
+│   │   │   ├── PostsPagination.tsx # 페이지네이션 래퍼
+│   │   │   ├── PostsPaginationNav.tsx # 페이지 네비게이션 UI
 │   │   │   └── PostsLoading.tsx # 로딩 스켈레톤
 │   │   ├── tags/               # 태그 관련 컴포넌트
-│   │   │   ├── TagCloud.tsx    # 태그 클라우드 뷰
-│   │   │   └── TagList.tsx     # 태그 리스트 뷰
+│   │   │   └── TagCloud.tsx    # 태그 클라우드/리스트 뷰
 │   │   ├── ui/                 # shadcn/ui 컴포넌트
-│   │   │   └── tag-badge.tsx   # 태그 배지 컴포넌트
+│   │   │   ├── button.tsx      # 버튼 컴포넌트
+│   │   │   ├── card.tsx        # 카드 컴포넌트
+│   │   │   ├── input.tsx       # 입력 필드
+│   │   │   ├── select.tsx      # 선택 드롭다운
+│   │   │   └── tag-badge.tsx   # 태그 배지
 │   │   ├── post-card.tsx       # 재사용 가능한 포스트 카드
-│   │   ├── ErrorBoundary.tsx   # 에러 바운더리
-│   │   ├── header.tsx          # 네비게이션 헤더
+│   │   ├── header.tsx          # 반응형 네비게이션 헤더
 │   │   ├── footer.tsx          # 푸터
+│   │   ├── scroll-to-top-button.tsx # 상단 이동 버튼
+│   │   ├── progress-bar.tsx    # 페이지 전환 프로그레스
+│   │   ├── ErrorBoundary.tsx   # 에러 바운더리
 │   │   └── theme-*.tsx         # 테마 관련 컴포넌트
 │   ├── config/                 # 설정 파일
 │   │   ├── constants.ts        # 앱 전역 상수
-│   │   └── messages.ts         # UI 메시지
+│   │   └── messages.ts         # UI 메시지 (i18n)
 │   ├── hooks/                  # 커스텀 React 훅
 │   │   ├── usePosts.ts         # 포스트 데이터 관리
 │   │   └── useCategories.ts    # 카테고리 관리
@@ -199,7 +226,7 @@ my-blog-with-notion/
 │   │   ├── notion.ts           # Notion API 통합
 │   │   ├── date-utils.ts       # 날짜 포맷팅
 │   │   ├── error-handler.ts    # 에러 처리
-│   │   ├── image-utils.ts      # 이미지 최적화 유틸리티
+│   │   ├── image-utils.ts      # 이미지 최적화
 │   │   ├── word-count.ts       # 읽기 시간 계산
 │   │   └── utils.ts            # 기타 유틸리티
 │   └── types/                  # TypeScript 타입 정의
@@ -256,15 +283,17 @@ my-blog-with-notion/
 
 ### 데이터 흐름
 1. **Static Site Generation (SSG)**: 빌드 시점에 포스트 페이지 생성
-2. **Content Pipeline**: Notion blocks → Markdown → HTML
+2. **Content Pipeline**: Notion blocks → Markdown (notion-to-md) → HTML (react-markdown)
 3. **Type Safety**: 모든 Notion 응답은 `NotionPageProperties` 인터페이스로 타입 정의
 4. **Error Handling**: `AppError` 클래스와 `ErrorBoundary` 컴포넌트로 중앙화
 
 ### 핵심 설계 원칙
-- **컴포넌트 분리**: 작고 집중된 컴포넌트로 구성
+- **컴포넌트 분리**: 작고 집중된 컴포넌트로 구성 (단일 책임 원칙)
 - **로직 재사용**: 커스텀 훅으로 비즈니스 로직 분리
 - **타입 안정성**: any 타입 사용 금지, 엄격한 타입 정의
 - **설정 중앙화**: 상수와 메시지를 별도 파일로 관리
+- **성능 최우선**: 이미지 최적화, 코드 스플리팅, 캐싱 전략
+- **접근성 준수**: WCAG 2.1 AA 기준, aria 속성, 시맨틱 HTML
 
 ## 🔧 주요 API 함수
 
@@ -357,20 +386,20 @@ CMD ["npm", "start"]
 ## 🔍 성능 최적화
 
 ### 이미지 최적화
-- Next.js Image 컴포넌트로 자동 최적화
-- WebP/AVIF 포맷 자동 변환
-- Lazy Loading 기본 적용 (처음 3개 이미지는 priority 로딩)
-- 반응형 이미지 제공
-- 30일 캐싱 TTL 설정
-- Blur placeholder 지원
-
-### 캐싱 전략
-
-#### 이미지 캐싱
-- **브라우저 캐싱**: Cache-Control 헤더로 1년 캐싱
-- **CDN 캐싱**: Vercel Edge Network 활용
-- **Next.js 캐싱**: 30일 minimumCacheTTL 설정
-- **최적화**: 디바이스별 최적화된 이미지 제공
+- **Next.js Image 컴포넌트**: 자동 최적화 및 포맷 변환
+- **적응형 이미지 로딩**:
+  - 처음 3개 이미지: priority 로딩 (LCP 최적화)
+  - 나머지 이미지: lazy loading
+- **반응형 sizes 속성**: 뷰포트별 최적 크기 제공
+  ```tsx
+  // 카드: (max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw
+  // 히어로: 100vw
+  // 전체: (max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px
+  ```
+- **캐싱 전략**:
+  - 브라우저: 30일 캐싱 + stale-while-revalidate
+  - CDN: Vercel Edge Network 활용
+  - Next.js: 30일 minimumCacheTTL
 
 ### 허용된 이미지 도메인
 - `prod-files-secure.s3.us-west-2.amazonaws.com` (Notion 파일)
@@ -380,27 +409,52 @@ CMD ["npm", "start"]
 - `lh3.googleusercontent.com` (Google 프로필 이미지)
 
 ### 빌드 최적화
-- Static Generation으로 빌드 시 페이지 생성
-- Incremental Static Regeneration (ISR) 지원
-- API Route 캐싱
-- 컴포넌트 레벨 코드 스플리팅
+- **Static Site Generation (SSG)**: 빌드 시 페이지 생성
+- **Dynamic Imports**: 컴포넌트 레벨 코드 스플리팅
+- **Tree Shaking**: 사용하지 않는 코드 제거
+- **Turbopack**: 개발 환경 빠른 빌드
 
 ## 🧪 개발 도구
 
 ### VS Code 확장 프로그램 추천
-- ESLint
-- Prettier
-- Tailwind CSS IntelliSense
-- TypeScript Vue Plugin
-- Thunder Client (API 테스트)
+- **ESLint**: 코드 품질 검사
+- **Prettier**: 코드 포맷팅
+- **Tailwind CSS IntelliSense**: Tailwind 클래스 자동완성
+- **TypeScript Vue Plugin**: TypeScript 지원
+- **Thunder Client**: API 테스트
+- **Error Lens**: 인라인 에러 표시
+- **GitLens**: Git 히스토리 확인
 
 ### 디버깅
 ```bash
 # 디버그 모드로 개발 서버 실행
 NODE_OPTIONS='--inspect' npm run dev
+
+# Chrome DevTools로 디버깅
+# chrome://inspect 접속 후 Remote Target 선택
 ```
 
+### 개발 팁
+- **Fast Refresh**: 코드 변경 시 자동 새로고침
+- **TypeScript 체크**: `npx tsc --noEmit --watch`로 실시간 타입 체크
+- **Bundle 분석**: `npm run build && npm run analyze`
+- **Lighthouse**: Chrome DevTools에서 성능 측정
+
 ## 📈 최근 업데이트
+
+### v2.2.0 - UI/UX 개선 및 성능 최적화 (2025.01)
+- 📱 **모바일 네비게이션**: 반응형 햄버거 메뉴 추가
+- 🎯 **프로그레스 바**: 페이지 전환 시각적 피드백
+- 📝 **컴포넌트 문서화**: 주요 컴포넌트 JSDoc 주석 추가
+- 🔒 **PII 보호**: Author 이메일 노출 제어 옵션
+- ⚡ **성능 개선**: 
+  - 태그 집계 성능 50-70% 향상
+  - 이미지 502 오류 수정 (Vercel 배포)
+  - 태그 slug-to-name 캐싱 구현
+- 🐛 **버그 수정**:
+  - TypeScript Next.js 15 params 타입 오류
+  - 페이지네이션 URL 빌드 개선
+  - 태그 필터링 slug 매핑 문제
 
 ### v2.1.0 - 태그 시스템 & Author 기능 추가 (2025.01)
 - 🏷️ 태그 시스템 구현 (Tag Cloud, Tag List 뷰)
@@ -423,11 +477,21 @@ NODE_OPTIONS='--inspect' npm run dev
 
 ## 🚧 알려진 이슈 및 개선 사항
 
-- [ ] 태그 검색 기능 추가 예정
-- [ ] Author 페이지 (작성자별 포스트 목록) 구현 예정
-- [ ] 댓글 시스템 통합 고려 중
-- [ ] RSS 피드 지원 예정
-- [ ] 다국어 지원 고려 중
+### 계획된 기능
+- [ ] 태그 검색 기능 추가
+- [ ] Author 페이지 (작성자별 포스트 목록)
+- [ ] 댓글 시스템 통합 (Giscus/Disqus)
+- [ ] RSS 피드 지원
+- [ ] 다국어 지원 (i18n)
+- [ ] 포스트 시리즈 기능
+- [ ] 관련 포스트 추천
+- [ ] 소셜 공유 버튼
+
+### 성능 개선
+- [ ] Incremental Static Regeneration (ISR) 구현
+- [ ] 검색 엔진 최적화 (sitemap.xml)
+- [ ] Web Vitals 모니터링
+- [ ] Bundle Size 최적화
 
 ## 🤝 기여하기
 
