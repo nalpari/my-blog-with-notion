@@ -171,10 +171,12 @@ export const Header = () => {
         - 트랜지션 애니메이션으로 부드러운 열기/닫기
         - opacity와 translate를 함께 사용하여 페이드 + 슬라이드 효과
         - visibility로 닫힌 상태에서 키보드 포커스 방지
+        - bg-background로 완전한 불투명 백그라운드 적용
+        - shadow-lg로 그림자 효과 추가하여 깊이감 표현
       */}
       <div
         ref={mobileMenuRef}
-        className={`md:hidden absolute top-16 left-0 right-0 bg-background/95 backdrop-blur border-b border-border/40 transition-all duration-300 ease-in-out ${
+        className={`md:hidden absolute top-16 left-0 right-0 bg-background border-b border-border shadow-lg transition-all duration-300 ease-in-out ${
           isMobileMenuOpen
             ? 'opacity-100 translate-y-0 visible'
             : 'opacity-0 -translate-y-2 invisible'
