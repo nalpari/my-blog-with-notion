@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPublishedPosts } from '@/lib/notion'
+import { getPublishedPosts, getPostsByTag } from '@/lib/notion'
 
 export async function GET(request: NextRequest) {
 	try {
@@ -24,12 +24,21 @@ export async function GET(request: NextRequest) {
 		// Parse category filter
 		const category = searchParams.get('category') || undefined
 		
+		// Parse tag filter
+		const tag = searchParams.get('tag') || undefined
+		
 		// For cursor-based pagination
 		const cursor = searchParams.get('cursor') || undefined
 		
-		// Fetch posts with filters applied at the Notion API level
-		// This is much more efficient as filtering happens on the database side
-		const response = await getPublishedPosts(limit, cursor, searchQuery, category)
+		let response
+		
+		// If tag filter is specified, use getPostsByTag
+		if (tag) {
+			response = await getPostsByTag(tag, limit, cursor)
+		} else {
+			// Otherwise use regular getPublishedPosts with search and category filters
+			response = await getPublishedPosts(limit, cursor, searchQuery, category)
+		}
 		
 		// Use the posts directly from the response (already filtered and paginated)
 		const paginatedPosts = response.posts
