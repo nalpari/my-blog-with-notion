@@ -132,6 +132,7 @@ interface PaginationInfo {
   hasMore: boolean
   hasNext: boolean
   hasPrevious: boolean
+  nextCursor?: string
 }
 
 interface ApiResponse {
@@ -143,6 +144,11 @@ interface ApiResponse {
 // 캐시 키 생성 함수
 const getCacheKey = (page: number, search: string, category: string) => {
   return `posts_cache_${page}_${search}_${category}`
+}
+
+// 커서 캐시 키 생성 함수  
+const getCursorCacheKey = (search: string, category: string) => {
+  return `cursor_map_${search}_${category}`
 }
 
 // sessionStorage에서 캐시된 데이터 가져오기
@@ -161,6 +167,41 @@ const getCachedData = (key: string) => {
     // 캐시 읽기 실패 시 무시
   }
   return null
+}
+
+// 커서 매핑 정보 가져오기
+const getCursorMap = (search: string, category: string): Map<number, string> => {
+  try {
+    const key = getCursorCacheKey(search, category)
+    const cached = sessionStorage.getItem(key)
+    if (cached) {
+      const data = JSON.parse(cached)
+      // 캐시 유효 시간: 10분 (API와 동일)
+      if (Date.now() - data.timestamp < 10 * 60 * 1000) {
+        return new Map(data.cursors)
+      }
+      sessionStorage.removeItem(key)
+    }
+  } catch {
+    // 캐시 읽기 실패 시 무시
+  }
+  return new Map()
+}
+
+// 커서 매핑 정보 저장
+const saveCursorMap = (search: string, category: string, cursorMap: Map<number, string>) => {
+  try {
+    const key = getCursorCacheKey(search, category)
+    sessionStorage.setItem(
+      key,
+      JSON.stringify({
+        cursors: Array.from(cursorMap.entries()),
+        timestamp: Date.now(),
+      }),
+    )
+  } catch {
+    // 캐시 저장 실패 시 무시
+  }
 }
 
 // sessionStorage에 데이터 캐싱
@@ -221,6 +262,7 @@ export function PostsListPage() {
   })
   const [allCategories, setAllCategories] = useState<string[]>([])
   const [isInitialMount, setIsInitialMount] = useState(true)
+  const [cursorMap, setCursorMap] = useState<Map<number, string>>(new Map())
 
   const postsPerPage = POSTS_CONFIG.POSTS_PER_PAGE
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -296,6 +338,16 @@ export function PostsListPage() {
           setPosts(data.posts)
           setPagination(data.pagination)
           setError(null)
+          
+          // 커서 정보 업데이트
+          if (data.pagination.nextCursor && page > 0) {
+            const newCursorMap = getCursorMap(search, category)
+            // 다음 페이지를 위한 커서 저장
+            newCursorMap.set(page + 1, data.pagination.nextCursor)
+            setCursorMap(newCursorMap)
+            saveCursorMap(search, category, newCursorMap)
+          }
+          
           // 데이터 캐싱
           setCachedData(cacheKey, data.posts, data.pagination)
         }
@@ -410,11 +462,15 @@ export function PostsListPage() {
   const handleSearchChange = (value: string) => {
     setSearchTerm(value)
     setCurrentPage(1)
+    // 검색어 변경 시 커서 맵 초기화
+    setCursorMap(new Map())
   }
 
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value)
     setCurrentPage(1)
+    // 카테고리 변경 시 커서 맵 초기화
+    setCursorMap(new Map())
   }
 
   return (
