@@ -2,20 +2,13 @@
  * 이미지 최적화 유틸리티
  */
 
-interface ImageOptimizationOptions {
-  width?: number
-  height?: number
-  quality?: number
-  format?: 'webp' | 'avif' | 'auto'
-}
 
 /**
  * 노션 이미지 URL 최적화
  * 노션 S3 이미지에 최적화 파라미터 추가
  */
 export function optimizeNotionImageUrl(
-  url: string | undefined,
-  options: ImageOptimizationOptions = {}
+  url: string | undefined
 ): string | undefined {
   if (!url) return undefined
 
@@ -46,7 +39,7 @@ export function optimizeNotionImageUrl(
  * Blur Data URL 생성 (서버사이드에서 실행)
  * 실제 이미지를 기반으로 blur placeholder 생성
  */
-export async function generateBlurDataURL(_imageUrl: string): Promise<string> {
+export async function generateBlurDataURL(): Promise<string> {
   // 기본 blur placeholder (회색)
   const defaultBlur = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=='
   

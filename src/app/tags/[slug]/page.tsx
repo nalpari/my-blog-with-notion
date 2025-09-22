@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getPostsByTag, getAllTags } from '@/lib/notion'
+import { getAllTags } from '@/lib/notion'
 import { TagPageClient } from '@/components/tags/TagPageClient'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
-export default async function TagPage({ params, searchParams }: TagPageProps) {
+export default async function TagPage({ params }: TagPageProps) {
   const { slug } = await params
   
   // 태그 정보 가져오기

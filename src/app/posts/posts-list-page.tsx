@@ -262,6 +262,7 @@ export function PostsListPage() {
   })
   const [allCategories, setAllCategories] = useState<string[]>([])
   const [isInitialMount, setIsInitialMount] = useState(true)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [cursorMap, setCursorMap] = useState<Map<number, string>>(new Map())
 
   const postsPerPage = POSTS_CONFIG.POSTS_PER_PAGE

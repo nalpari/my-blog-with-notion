@@ -2,10 +2,14 @@
 
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 
-export function PostsLoading() {
+interface PostsLoadingProps {
+  count?: number
+}
+
+export function PostsLoading({ count = 6 }: PostsLoadingProps = {}) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {[1, 2, 3, 4, 5, 6].map((i) => (
+      {Array.from({ length: count }, (_, i) => i + 1).map((i) => (
         <Card key={i} className="overflow-hidden p-0">
           <div className="relative h-48 w-full bg-muted animate-pulse" />
           <CardHeader className="p-6 pb-4">
