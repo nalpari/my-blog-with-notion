@@ -15,6 +15,7 @@ import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
 import { Menu, X } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
+import { AuthButton } from "./header/AuthButton"
 
 /**
  * 네비게이션 헤더 컴포넌트
@@ -142,7 +143,13 @@ export const Header = () => {
 
         {/* 오른쪽 액션 영역 */}
         <div className="flex items-center space-x-2">
-          {/* 
+          {/* 인증 버튼 - 로그인/프로필 */}
+          <AuthButton />
+
+          {/* 다크모드 토글 - 모든 화면 크기에서 표시 */}
+          <ThemeToggle />
+
+          {/*
             모바일 햄버거 메뉴 버튼
             - md(768px) 미만에서만 표시
             - 상태에 따라 햄버거/X 아이콘 토글
@@ -159,9 +166,6 @@ export const Header = () => {
               <Menu className="h-5 w-5" />
             )}
           </button>
-          
-          {/* 다크모드 토글 - 모든 화면 크기에서 표시 */}
-          <ThemeToggle />
         </div>
       </div>
 

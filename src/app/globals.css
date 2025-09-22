@@ -177,3 +177,19 @@
     animation: progressBarPulse 1.5s infinite;
   }
 }
+
+@layer utilities {
+  /* Animation delays for typing indicator */
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .animation-delay-400 {
+    animation-delay: 400ms;
+  }
+
+  /* Smooth transitions for comments */
+  .comment-transition {
+    @apply transition-all duration-200 ease-in-out;
+  }
+}

@@ -13,7 +13,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { optimizeNotionImageUrl, getImageSizes } from '@/lib/image-utils'
+import { getImageSizes } from '@/lib/image-utils'
 import {
   Card,
   CardContent,
