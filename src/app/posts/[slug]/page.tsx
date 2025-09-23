@@ -261,7 +261,7 @@ export default async function PostPage({ params }: PostPageProps) {
           </div>
 
           {/* Comments Section */}
-          <CommentsSection postSlug={slug} postTitle={post.title} />
+          <CommentsSection postSlug={slug} />
         </article>
       </div>
       <ScrollToTopButton />

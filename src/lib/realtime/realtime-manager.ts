@@ -1,3 +1,5 @@
+'use client'
+
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { RealtimeChannel, RealtimePresenceState } from '@supabase/supabase-js'
 import { CommentWithReplies } from '@/types/supabase'
@@ -26,12 +28,12 @@ export interface TypingUser {
 export class RealtimeManager {
   private channel: RealtimeChannel | null = null
   private listeners = new Map<keyof RealtimeEvents, Set<(...args: any[]) => void>>()
-  private typingTimeout: NodeJS.Timeout | null = null
+  private typingTimeout: ReturnType<typeof setTimeout> | null = null
   private currentUser: PresenceUser | null = null
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
   private reconnectDelay = 1000
-  private reconnectTimer: NodeJS.Timeout | null = null
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private isConnected = false
   private connectionListeners = new Set<(connected: boolean) => void>()
 
@@ -58,6 +60,7 @@ export class RealtimeManager {
         user_avatar: user?.user_metadata?.avatar_url,
         online_at: new Date().toISOString(),
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       // 인증 실패 시 익명 사용자로 처리
       console.log('No authenticated user, using anonymous mode')
@@ -82,44 +85,46 @@ export class RealtimeManager {
     })
 
     // Setup broadcast listeners
-    this.channel
-      .on('broadcast', { event: 'comment:new' }, ({ payload }) => {
-        this.emit('comment:new', payload.comment)
-      })
-      .on('broadcast', { event: 'comment:update' }, ({ payload }) => {
-        this.emit('comment:update', payload.comment)
-      })
-      .on('broadcast', { event: 'comment:delete' }, ({ payload }) => {
-        this.emit('comment:delete', payload.commentId)
-      })
-      .on('broadcast', { event: 'user:typing' }, ({ payload }) => {
-        this.emit('user:typing', payload.userId, payload.userName)
+    if (this.channel) {
+      this.channel
+        .on('broadcast', { event: 'comment:new' }, ({ payload }) => {
+          this.emit('comment:new', payload.comment)
+        })
+        .on('broadcast', { event: 'comment:update' }, ({ payload }) => {
+          this.emit('comment:update', payload.comment)
+        })
+        .on('broadcast', { event: 'comment:delete' }, ({ payload }) => {
+          this.emit('comment:delete', payload.commentId)
+        })
+        .on('broadcast', { event: 'user:typing' }, ({ payload }) => {
+          this.emit('user:typing', payload.userId, payload.userName)
+        })
+
+      // Setup presence listener
+      this.channel.on('presence', { event: 'sync' }, () => {
+        const presenceState = this.channel!.presenceState()
+        const users = this.getPresenceUsers(presenceState)
+        this.emit('presence:sync', users)
       })
 
-    // Setup presence listener
-    this.channel.on('presence', { event: 'sync' }, () => {
-      const presenceState = this.channel!.presenceState()
-      const users = this.getPresenceUsers(presenceState)
-      this.emit('presence:sync', users)
-    })
+      // Subscribe to channel with error handling
+      await this.channel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          this.isConnected = true
+          this.reconnectAttempts = 0
+          this.notifyConnectionListeners(true)
+          console.log('Realtime connected successfully')
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          this.isConnected = false
+          this.notifyConnectionListeners(false)
+          this.handleReconnect()
+        }
+      })
 
-    // Subscribe to channel with error handling
-    await this.channel.subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        this.isConnected = true
-        this.reconnectAttempts = 0
-        this.notifyConnectionListeners(true)
-        console.log('Realtime connected successfully')
-      } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-        this.isConnected = false
-        this.notifyConnectionListeners(false)
-        this.handleReconnect()
+      // Track current user presence
+      if (this.currentUser && this.channel) {
+        await this.channel.track(this.currentUser)
       }
-    })
-
-    // Track current user presence
-    if (this.currentUser) {
-      await this.channel.track(this.currentUser)
     }
   }
 

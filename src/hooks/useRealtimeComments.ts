@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { RealtimeManager, PresenceUser } from '@/lib/realtime/realtime-manager'
 import { CommentWithReplies } from '@/types/supabase'
 
@@ -24,6 +24,7 @@ export function useRealtimeComments({
   onUsersChanged,
 }: UseRealtimeCommentsOptions) {
   const managerRef = useRef<RealtimeManager | null>(null)
+  const [isConnected, setIsConnected] = useState<boolean>(false)
 
   useEffect(() => {
     if (!postSlug || !enabled) return
@@ -31,6 +32,11 @@ export function useRealtimeComments({
     // Create realtime manager
     const manager = new RealtimeManager(postSlug)
     managerRef.current = manager
+
+    // Setup connection listener
+    const unsubscribeConnection = manager.onConnectionChange(() => {
+      setIsConnected(manager.isSubscribed())
+    })
 
     // Setup event listeners
     const unsubscribers: (() => void)[] = []
@@ -68,11 +74,16 @@ export function useRealtimeComments({
     // Subscribe to channel
     manager.subscribe()
 
+    // Set initial connection status after subscribe
+    setIsConnected(manager.isSubscribed())
+
     // Cleanup
     return () => {
       unsubscribers.forEach(unsubscribe => unsubscribe())
+      unsubscribeConnection() // Clean up connection listener
       manager.unsubscribe()
       managerRef.current = null
+      setIsConnected(false)
     }
   }, [postSlug, enabled, onCommentAdded, onCommentUpdated, onCommentDeleted, onTyping, onUsersChanged])
 
@@ -103,6 +114,6 @@ export function useRealtimeComments({
     broadcastCommentDelete,
     broadcastTyping,
     getOnlineUsersCount,
-    isConnected: managerRef.current?.isSubscribed() || false,
+    isConnected,
   }
 }

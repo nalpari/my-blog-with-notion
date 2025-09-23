@@ -20,11 +20,11 @@ export default async function AuthError({
       </Alert>
 
       <div className="mt-6 flex flex-col gap-4">
-        <Link href="/">
-          <Button className="w-full">
+        <Button asChild className="w-full">
+          <Link href="/">
             Return to Home
-          </Button>
-        </Link>
+          </Link>
+        </Button>
 
         <div className="text-sm text-muted-foreground">
           <p>Common causes:</p>

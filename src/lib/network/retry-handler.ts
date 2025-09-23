@@ -84,7 +84,7 @@ export class CircuitBreaker {
   ): Promise<T> {
     // Check if circuit is open
     if (this.state === 'open') {
-      if (Date.now() - (this.lastFailureTime || 0) > this.resetTimeout) {
+      if (Date.now() - (this.lastFailureTime || 0) > this.timeout) {
         this.state = 'half-open'
       } else if (fallback) {
         return fallback()
@@ -96,18 +96,19 @@ export class CircuitBreaker {
     try {
       const result = await fn()
 
-      // Reset on success
-      if (this.state === 'half-open') {
-        this.state = 'closed'
-        this.failures = 0
-      }
+      // Always reset on success
+      this.failures = 0
+      this.state = 'closed'
 
       return result
     } catch (error) {
       this.failures++
       this.lastFailureTime = Date.now()
 
-      if (this.failures >= this.threshold) {
+      // If half-open, immediately transition to open on any failure
+      if (this.state === 'half-open') {
+        this.state = 'open'
+      } else if (this.failures >= this.threshold) {
         this.state = 'open'
       }
 

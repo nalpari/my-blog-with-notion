@@ -41,7 +41,7 @@ export interface Database {
           updated_at?: string
         }
         Update: {
-          id?: string
+          // Primary key (id) must not be updatable - removed for security
           post_slug?: string
           parent_id?: string | null
           user_id?: string | null

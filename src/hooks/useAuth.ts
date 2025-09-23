@@ -48,7 +48,7 @@ export function useAuth() {
 
     // Listen to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (_event: any, session: any) => {
         setAuthState({
           user: session?.user ?? null,
           session,
@@ -90,9 +90,9 @@ export function useAuth() {
       provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        // Google OAuth에 대한 추가 scope 설정
+        // Google OAuth에 대한 기본 및 추가 scope 설정
         ...(provider === 'google' && {
-          scopes: 'https://www.googleapis.com/auth/userinfo.email'
+          scopes: 'openid email profile'
         })
       },
     })

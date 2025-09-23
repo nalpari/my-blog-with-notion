@@ -21,6 +21,32 @@ interface CommentProps {
   className?: string
 }
 
+/**
+ * Validate and sanitize href to prevent XSS attacks
+ * Only allows safe protocols and relative paths
+ */
+function isSafeHref(href: string | undefined): boolean {
+  if (!href) return false
+
+  // Allow relative paths and fragment hashes
+  if (href.startsWith('/') || href.startsWith('#')) {
+    return true
+  }
+
+  // Parse and validate URL protocols
+  try {
+    const url = new URL(href)
+    const allowedProtocols = ['http:', 'https:', 'mailto:', 'tel:']
+    return allowedProtocols.includes(url.protocol)
+  } catch {
+    // If URL parsing fails, it might be a relative path without leading /
+    // Only allow if it doesn't contain suspicious patterns
+    const suspiciousPatterns = ['javascript:', 'data:', 'vbscript:', 'file:']
+    const lowerHref = href.toLowerCase()
+    return !suspiciousPatterns.some(pattern => lowerHref.includes(pattern))
+  }
+}
+
 export function Comment({
   comment,
   onReply,
@@ -31,14 +57,13 @@ export function Comment({
   className
 }: CommentProps) {
   const [isEditing, setIsEditing] = useState(false)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [editContent, setEditContent] = useState(comment.content)
   const [isReplying, setIsReplying] = useState(false)
 
-  const isAuthor = currentUserId && (
-    comment.user_id === currentUserId ||
-    comment.user_email === currentUserId
-  )
+  // Security fix: Only authenticated users can edit/delete their own comments
+  // Anonymous comments cannot be edited/deleted
+  const isAuthor = currentUserId &&
+    comment.user_id &&
+    comment.user_id === currentUserId
 
   const userName = comment.user_name || 'Anonymous'
   const userInitial = userName[0].toUpperCase()
@@ -48,7 +73,6 @@ export function Comment({
     if (onEdit) {
       await onEdit(comment.id, content)
       setIsEditing(false)
-      setEditContent(content)
     }
   }
 
@@ -117,10 +141,12 @@ export function Comment({
             <CommentForm
               onSubmit={handleEditSubmit}
               onTyping={() => {}}
+              onCancel={() => setIsEditing(false)}
               isAuthenticated={true}
               placeholder="Edit your comment..."
               autoFocus
               className="mt-2"
+              initialContent={comment.content}
             />
           ) : (
             <div className="prose prose-sm dark:prose-invert max-w-none">
@@ -134,16 +160,31 @@ export function Comment({
                   components={{
                     // Custom renderers for markdown elements
                     p: ({ children }) => <p className="mb-2 last:mb-0 whitespace-pre-wrap">{children}</p>,
-                    a: ({ href, children }) => (
-                      <a
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary underline-offset-2 hover:underline"
-                      >
-                        {children}
-                      </a>
-                    ),
+                    a: ({ href, children }) => {
+                      // Validate href to prevent XSS attacks
+                      if (!isSafeHref(href)) {
+                        // Render as non-clickable span for unsafe URLs
+                        return (
+                          <span className="text-muted-foreground" title="Unsafe link blocked">
+                            {children}
+                          </span>
+                        )
+                      }
+
+                      // For relative paths, don't open in new tab
+                      const isExternal = href && (href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:'))
+
+                      return (
+                        <a
+                          href={href}
+                          target={isExternal ? "_blank" : undefined}
+                          rel={isExternal ? "noopener noreferrer" : undefined}
+                          className="text-primary underline-offset-2 hover:underline"
+                        >
+                          {children}
+                        </a>
+                      )
+                    },
                     code: ({ children }) => {
                       const isInline = !String(children).includes('\n')
                       return isInline ? (
@@ -172,10 +213,7 @@ export function Comment({
               onDelete={isAuthor && onDelete ? handleDelete : undefined}
               onCancel={
                 isEditing
-                  ? () => {
-                      setIsEditing(false)
-                      setEditContent(comment.content)
-                    }
+                  ? () => setIsEditing(false)
                   : isReplying
                   ? () => setIsReplying(false)
                   : undefined

@@ -14,7 +14,6 @@ import { useToast } from '@/components/ui/toast-provider'
 
 interface CommentsSectionProps {
   postSlug: string
-  postTitle: string
 }
 
 export function CommentsSection({ postSlug }: CommentsSectionProps) {
@@ -44,7 +43,7 @@ export function CommentsSection({ postSlug }: CommentsSectionProps) {
 
   // Handle comment submission
   const handleCommentSubmit = async (content: string, parentId?: string | null) => {
-    if (!user && !parentId) {
+    if (!user) {
       openAuthModal()
       return
     }
@@ -74,9 +73,17 @@ export function CommentsSection({ postSlug }: CommentsSectionProps) {
     setReplyToComment(null)
   }
 
-  // Calculate total comment count
+  // Helper function to recursively count comments including all nested replies
+  const countWithReplies = (comment: any): number => {
+    const replyCount = comment.replies?.reduce((sum: number, reply: any) => {
+      return sum + countWithReplies(reply)
+    }, 0) || 0
+    return 1 + replyCount
+  }
+
+  // Calculate total comment count including all nested replies
   const totalComments = comments.reduce((count, comment) => {
-    return count + 1 + (comment.replies?.length || 0)
+    return count + countWithReplies(comment)
   }, 0)
 
   return (

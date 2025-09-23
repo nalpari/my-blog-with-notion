@@ -9,23 +9,27 @@ import { cn } from '@/lib/utils'
 interface CommentFormProps {
   onSubmit: (content: string) => Promise<void>
   onTyping?: () => void
+  onCancel?: () => void
   isAuthenticated: boolean
   isLoading?: boolean
   placeholder?: string
   autoFocus?: boolean
   className?: string
+  initialContent?: string
 }
 
 export function CommentForm({
   onSubmit,
   onTyping,
+  onCancel,
   isAuthenticated,
   isLoading = false,
   placeholder = 'Write a comment...',
   autoFocus = false,
-  className
+  className,
+  initialContent = ''
 }: CommentFormProps) {
-  const [content, setContent] = useState('')
+  const [content, setContent] = useState(initialContent)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -103,6 +107,10 @@ export function CommentForm({
   }, [])
 
   const isDisabled = !isAuthenticated || isLoading || isSubmitting
+  const characterLimit = 5000
+  const remainingChars = characterLimit - content.length
+  const isNearLimit = remainingChars <= 500 // Warn when 500 chars or less remain
+  const isAtLimit = remainingChars <= 0
 
   return (
     <form onSubmit={handleSubmit} className={cn('space-y-3', className)}>
@@ -115,20 +123,39 @@ export function CommentForm({
           placeholder={placeholder}
           disabled={isDisabled}
           autoFocus={autoFocus}
+          maxLength={characterLimit}
           className={cn(
             'min-h-[100px] max-h-[400px] resize-none pr-12',
             'placeholder:text-muted-foreground/60',
             isDisabled && 'opacity-60 cursor-not-allowed'
           )}
           aria-label="Comment input"
+          aria-describedby="char-count"
+          aria-invalid={isAtLimit}
         />
 
-        {/* Character count */}
-        {content.length > 0 && (
-          <div className="absolute bottom-2 right-2 text-xs text-muted-foreground">
-            {content.length}/5000
-          </div>
-        )}
+        {/* Character count with accessibility */}
+        <div
+          id="char-count"
+          className={cn(
+            "absolute bottom-2 right-2 text-xs",
+            isAtLimit && "text-destructive font-semibold",
+            isNearLimit && !isAtLimit && "text-orange-500",
+            !isNearLimit && "text-muted-foreground"
+          )}
+          aria-live={isNearLimit ? "polite" : "off"}
+          aria-atomic="true"
+        >
+          <span className="sr-only">
+            {isAtLimit
+              ? "Character limit reached. "
+              : isNearLimit
+              ? `Warning: Only ${remainingChars} characters remaining. `
+              : ""
+            }
+          </span>
+          {content.length}/{characterLimit}
+        </div>
       </div>
 
       {/* Actions */}
@@ -144,24 +171,37 @@ export function CommentForm({
           )}
         </div>
 
-        <Button
-          type="submit"
-          size="sm"
-          disabled={isDisabled || !content.trim()}
-          className="gap-2"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Posting...
-            </>
-          ) : (
-            <>
-              <Send className="h-4 w-4" />
-              Post
-            </>
+        <div className="flex gap-2">
+          {onCancel && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
           )}
-        </Button>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={isDisabled || !content.trim()}
+            className="gap-2"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Posting...
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4" />
+                Post
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </form>
   )

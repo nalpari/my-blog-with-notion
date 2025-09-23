@@ -110,31 +110,45 @@ class CommentCache {
     entry.timestamp = Date.now() // Refresh timestamp
   }
 
-  // Delete a comment from cache
-  deleteComment(postSlug: string, commentId: string): void {
+  // Helper function to mark multiple comments as deleted recursively
+  private markCommentsAsDeleted(comments: CommentWithReplies[], idsToDelete: Set<string>): CommentWithReplies[] {
+    return comments.map(comment => {
+      // If this comment should be deleted, mark it and all its children as deleted
+      if (idsToDelete.has(comment.id)) {
+        // Recursively mark all children as deleted too
+        const markAllDescendantsDeleted = (node: CommentWithReplies): CommentWithReplies => {
+          return {
+            ...node,
+            is_deleted: true,
+            content: '[This comment has been deleted]',
+            replies: node.replies ? node.replies.map(markAllDescendantsDeleted) : []
+          }
+        }
+        return markAllDescendantsDeleted(comment)
+      }
+
+      // If not deleted, recursively check and update replies
+      if (comment.replies && comment.replies.length > 0) {
+        return {
+          ...comment,
+          replies: this.markCommentsAsDeleted(comment.replies, idsToDelete)
+        }
+      }
+
+      return comment
+    })
+  }
+
+  // Delete comment(s) from cache - accepts single ID or array of IDs
+  deleteComment(postSlug: string, commentIds: string | string[]): void {
     const entry = this.cache.get(postSlug)
     if (!entry) return
 
-    const markAsDeleted = (comments: CommentWithReplies[]): CommentWithReplies[] => {
-      return comments.map(comment => {
-        if (comment.id === commentId) {
-          return {
-            ...comment,
-            is_deleted: true,
-            content: '[This comment has been deleted]'
-          }
-        }
-        if (comment.replies) {
-          return {
-            ...comment,
-            replies: markAsDeleted(comment.replies)
-          }
-        }
-        return comment
-      })
-    }
+    // Convert to Set for efficient lookup
+    const idsToDelete = new Set(Array.isArray(commentIds) ? commentIds : [commentIds])
 
-    entry.data = markAsDeleted(entry.data)
+    // Mark all specified comments and their descendants as deleted
+    entry.data = this.markCommentsAsDeleted(entry.data, idsToDelete)
     entry.timestamp = Date.now() // Refresh timestamp
   }
 

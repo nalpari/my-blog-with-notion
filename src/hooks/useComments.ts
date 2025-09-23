@@ -57,37 +57,51 @@ export function useComments({
   }, [])
 
 
+  // Helper function to recursively insert a reply into the comment tree
+  const insertReplyRecursively = useCallback((
+    comments: CommentWithReplies[],
+    parentId: string | null,
+    newComment: CommentWithReplies
+  ): CommentWithReplies[] => {
+    // If parentId is null, return unchanged (shouldn't happen in this context)
+    if (!parentId) return comments
+
+    return comments.map(comment => {
+      // Found the parent comment
+      if (comment.id === parentId) {
+        return {
+          ...comment,
+          replies: [...(comment.replies || []), newComment]
+        }
+      }
+
+      // If this comment has replies, recursively search them
+      if (comment.replies && comment.replies.length > 0) {
+        const updatedReplies = insertReplyRecursively(comment.replies, parentId, newComment)
+        // Only create a new object if replies actually changed
+        if (updatedReplies !== comment.replies) {
+          return {
+            ...comment,
+            replies: updatedReplies
+          }
+        }
+      }
+
+      // No changes needed for this comment
+      return comment
+    })
+  }, [])
+
   // Handle real-time updates
   const handleCommentAdded = useCallback((newComment: CommentWithReplies) => {
     if (newComment.parent_id) {
-      // Add reply to parent comment
-      setComments(prev => prev.map(comment => {
-        if (comment.id === newComment.parent_id) {
-          return {
-            ...comment,
-            replies: [...(comment.replies || []), newComment]
-          }
-        }
-        // Check nested replies
-        if (comment.replies) {
-          const updatedReplies = comment.replies.map(reply => {
-            if (reply.id === newComment.parent_id) {
-              return {
-                ...reply,
-                replies: [...(reply.replies || []), newComment]
-              }
-            }
-            return reply
-          })
-          return { ...comment, replies: updatedReplies }
-        }
-        return comment
-      }))
+      // Add reply to parent comment using recursive helper
+      setComments(prev => insertReplyRecursively(prev, newComment.parent_id, newComment))
     } else {
       // Add new top-level comment
       setComments(prev => [newComment, ...prev])
     }
-  }, [])
+  }, [insertReplyRecursively])
 
   const handleCommentUpdated = useCallback((updatedComment: CommentWithReplies) => {
     setComments(prev => prev.map(comment => {
@@ -107,23 +121,33 @@ export function useComments({
 
   const handleCommentDeleted = useCallback((deletedIds: string[]) => {
     setComments(prev => {
-      // Helper function to remove all deleted IDs from replies recursively
-      const removeFromReplies = (replies: CommentWithReplies[]): CommentWithReplies[] => {
-        return replies
-          .filter(reply => !deletedIds.includes(reply.id))
-          .map(reply => ({
-            ...reply,
-            replies: reply.replies ? removeFromReplies(reply.replies) : []
-          }))
+      // Helper function to mark deleted comments with is_deleted flag recursively
+      const markAsDeleted = (comments: CommentWithReplies[]): CommentWithReplies[] => {
+        return comments.map(comment => {
+          // If this comment is in the deleted list, mark it as deleted
+          if (deletedIds.includes(comment.id)) {
+            return {
+              ...comment,
+              is_deleted: true,
+              content: '[This comment has been deleted]',
+              replies: comment.replies ? markAsDeleted(comment.replies) : []
+            }
+          }
+
+          // If not deleted, recursively check replies
+          if (comment.replies && comment.replies.length > 0) {
+            return {
+              ...comment,
+              replies: markAsDeleted(comment.replies)
+            }
+          }
+
+          return comment
+        })
       }
 
-      // Filter out all deleted comments from top level and recursively from replies
-      return prev
-        .filter(comment => !deletedIds.includes(comment.id))
-        .map(comment => ({
-          ...comment,
-          replies: comment.replies ? removeFromReplies(comment.replies) : []
-        }))
+      // Mark all deleted comments with is_deleted flag
+      return markAsDeleted(prev)
     })
   }, [])
 
@@ -213,7 +237,7 @@ export function useComments({
         content,
         parentId,
         userName: user?.user_metadata?.name,
-        userEmail: user?.email,
+        userId: user?.id,  // PII Security: Use userId instead of email
       })
 
       // Update local state immediately (optimistic update)
@@ -265,10 +289,8 @@ export function useComments({
       // Update local state immediately with all deleted IDs
       handleCommentDeleted(result.deletedIds)
 
-      // Update cache for all deleted comments
-      result.deletedIds.forEach(id => {
-        commentCache.deleteComment(postSlug, id)
-      })
+      // Update cache for all deleted comments (pass all IDs at once)
+      commentCache.deleteComment(postSlug, result.deletedIds)
 
       // Broadcast to other users (send all deleted IDs)
       if (enableRealtime) {

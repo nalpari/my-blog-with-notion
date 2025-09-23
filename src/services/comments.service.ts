@@ -1,23 +1,39 @@
+'use client'
+
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { CommentWithReplies } from '@/types/supabase'
-import { CreateCommentInput } from '@/types/comment'
+import { CreateCommentInput, FetchError, isErrorResponse } from '@/types/comment'
 import { withRetry, CircuitBreaker, RequestQueue } from '@/lib/network/retry-handler'
 
 class CommentsService {
   private static instance: CommentsService
   private circuitBreaker: CircuitBreaker
   private requestQueue: RequestQueue
+  private baseUrl: string
 
-  private constructor() {
+  private constructor(baseUrl?: string) {
     this.circuitBreaker = new CircuitBreaker()
     this.requestQueue = new RequestQueue(3)
+    // SSR-safe: accept injected baseUrl or use window.location if available
+    this.baseUrl = baseUrl || (typeof window !== 'undefined' ? window.location.origin : '')
   }
 
-  static getInstance(): CommentsService {
+  static getInstance(baseUrl?: string): CommentsService {
     if (!CommentsService.instance) {
-      CommentsService.instance = new CommentsService()
+      CommentsService.instance = new CommentsService(baseUrl)
     }
     return CommentsService.instance
+  }
+
+  /**
+   * Helper to get the base URL for API calls
+   */
+  private getApiUrl(path: string): string {
+    if (!this.baseUrl && typeof window === 'undefined') {
+      throw new Error('Base URL is required for SSR context')
+    }
+    const base = this.baseUrl || window.location.origin
+    return new URL(path, base).toString()
   }
 
   /**
@@ -33,7 +49,7 @@ class CommentsService {
     return this.circuitBreaker.execute(
       () => withRetry(
         async () => {
-          const url = new URL('/api/comments', window.location.origin)
+          const url = new URL(this.getApiUrl('/api/comments'))
           url.searchParams.append('post', postSlug)
 
           if (options?.limit) {
@@ -47,9 +63,11 @@ class CommentsService {
           const response = await fetch(url.toString())
 
           if (!response.ok) {
-            const error: any = new Error(`Failed to fetch comments: ${response.statusText}`)
-            error.status = response.status
-            throw error
+            throw new FetchError(
+              `Failed to fetch comments: ${response.statusText}`,
+              response.status,
+              response.statusText
+            )
           }
 
           return response.json()
@@ -82,10 +100,18 @@ class CommentsService {
           })
 
           if (!response.ok) {
-            const errorData = await response.json()
-            const error: any = new Error(errorData.message || 'Failed to create comment')
-            error.status = response.status
-            throw error
+            const errorData: unknown = await response.json()
+            let message = 'Failed to create comment'
+
+            if (isErrorResponse(errorData)) {
+              message = errorData.message
+            }
+
+            throw new FetchError(
+              message,
+              response.status,
+              response.statusText
+            )
           }
 
           const result = await response.json()
@@ -95,9 +121,10 @@ class CommentsService {
           maxRetries: 2,
           retryCondition: (error) => {
             // Don't retry client errors (4xx)
-            if ((error as any).status && (error as any).status >= 400 && (error as any).status < 500) {
-              return false
+            if (FetchError.isFetchError(error)) {
+              return !(error.status >= 400 && error.status < 500)
             }
+            // Retry other errors
             return true
           },
           onRetry: (attempt, error) => {
@@ -124,10 +151,18 @@ class CommentsService {
           })
 
           if (!response.ok) {
-            const errorData = await response.json()
-            const error: any = new Error(errorData.message || 'Failed to update comment')
-            error.status = response.status
-            throw error
+            const errorData: unknown = await response.json()
+            let message = 'Failed to update comment'
+
+            if (isErrorResponse(errorData)) {
+              message = errorData.message
+            }
+
+            throw new FetchError(
+              message,
+              response.status,
+              response.statusText
+            )
           }
 
           const result = await response.json()
@@ -150,7 +185,7 @@ class CommentsService {
     return this.requestQueue.add(() =>
       withRetry(
         async () => {
-          const url = new URL('/api/comments', window.location.origin)
+          const url = new URL(this.getApiUrl('/api/comments'))
           url.searchParams.append('id', commentId)
 
           const response = await fetch(url.toString(), {
@@ -158,10 +193,18 @@ class CommentsService {
           })
 
           if (!response.ok) {
-            const errorData = await response.json()
-            const error: any = new Error(errorData.message || 'Failed to delete comment')
-            error.status = response.status
-            throw error
+            const errorData: unknown = await response.json()
+            let message = 'Failed to delete comment'
+
+            if (isErrorResponse(errorData)) {
+              message = errorData.message
+            }
+
+            throw new FetchError(
+              message,
+              response.status,
+              response.statusText
+            )
           }
 
           const result = await response.json()
@@ -216,9 +259,13 @@ class CommentsService {
     }
 
     // Count comments per post
-    data?.forEach(comment => {
-      const current = counts.get(comment.post_slug) || 0
-      counts.set(comment.post_slug, current + 1)
+    data?.forEach((comment: unknown) => {
+      // Type guard for comment data
+      if (typeof comment === 'object' && comment !== null && 'post_slug' in comment) {
+        const typedComment = comment as { post_slug: string }
+        const current = counts.get(typedComment.post_slug) || 0
+        counts.set(typedComment.post_slug, current + 1)
+      }
     })
 
     // Set 0 for posts without comments
