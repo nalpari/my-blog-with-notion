@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { CommentWithReplies } from '@/types/supabase'
-import { PresenceUser } from '@/lib/realtime/realtime-manager'
+import { PresenceUser, PublicComment } from '@/lib/realtime/realtime-manager'
 import { useRealtimeComments } from './useRealtimeComments'
 import { commentsService } from '@/services/comments.service'
 import { useAuth } from './useAuth'
@@ -92,32 +92,61 @@ export function useComments({
     })
   }, [])
 
+  // Helper to convert PublicComment to CommentWithReplies format
+  // This adds the missing fields with null values for compatibility
+  const toCommentWithReplies = useCallback((comment: CommentWithReplies | PublicComment): CommentWithReplies => {
+    if ('user_email' in comment) {
+      // Already a CommentWithReplies
+      return comment
+    }
+    // Convert PublicComment to CommentWithReplies
+    return {
+      ...comment,
+      user_email: null, // Add missing field with null value
+      deleted_at: null, // Add missing field with null value
+      replies: comment.replies?.map(toCommentWithReplies)
+    } as CommentWithReplies
+  }, [])
+
   // Handle real-time updates
-  const handleCommentAdded = useCallback((newComment: CommentWithReplies) => {
-    if (newComment.parent_id) {
+  const handleCommentAdded = useCallback((newComment: CommentWithReplies | PublicComment) => {
+    const comment = toCommentWithReplies(newComment)
+    if (comment.parent_id) {
       // Add reply to parent comment using recursive helper
-      setComments(prev => insertReplyRecursively(prev, newComment.parent_id, newComment))
+      setComments(prev => insertReplyRecursively(prev, comment.parent_id, comment))
     } else {
       // Add new top-level comment
-      setComments(prev => [newComment, ...prev])
+      setComments(prev => [comment, ...prev])
     }
-  }, [insertReplyRecursively])
+  }, [insertReplyRecursively, toCommentWithReplies])
 
-  const handleCommentUpdated = useCallback((updatedComment: CommentWithReplies) => {
-    setComments(prev => prev.map(comment => {
-      if (comment.id === updatedComment.id) {
-        return updatedComment
+  const handleCommentUpdated = useCallback((updatedComment: CommentWithReplies | PublicComment) => {
+    const comment = toCommentWithReplies(updatedComment)
+    // Helper function to recursively update a comment node in the tree
+    const updateNodeRecursively = (node: CommentWithReplies): CommentWithReplies => {
+      // If this is the node to update, return the updated version
+      if (node.id === comment.id) {
+        return comment
       }
-      // Check replies
-      if (comment.replies) {
-        const updatedReplies = comment.replies.map(reply =>
-          reply.id === updatedComment.id ? updatedComment : reply
-        )
-        return { ...comment, replies: updatedReplies }
+
+      // If this node has replies, recursively check and update them
+      if (node.replies && node.replies.length > 0) {
+        const updatedReplies = node.replies.map(reply => updateNodeRecursively(reply))
+
+        // Only create a new object if replies actually changed
+        const repliesChanged = updatedReplies.some((reply, index) => reply !== node.replies![index])
+        if (repliesChanged) {
+          return { ...node, replies: updatedReplies }
+        }
       }
-      return comment
-    }))
-  }, [])
+
+      // No changes needed for this node
+      return node
+    }
+
+    // Update the comments tree
+    setComments(prev => prev.map(root => updateNodeRecursively(root)))
+  }, [toCommentWithReplies])
 
   const handleCommentDeleted = useCallback((deletedIds: string[]) => {
     setComments(prev => {

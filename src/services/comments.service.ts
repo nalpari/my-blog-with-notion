@@ -242,38 +242,44 @@ class CommentsService {
 
   /**
    * 여러 포스트의 댓글 수 가져오기
+   * Optimized to fetch counts individually per post using Supabase count
    */
   async getCommentCounts(postSlugs: string[]): Promise<Map<string, number>> {
     const supabase = getSupabaseClient()
     const counts = new Map<string, number>()
 
-    const { data, error } = await supabase
-      .from('comments')
-      .select('post_slug')
-      .in('post_slug', postSlugs)
-      .eq('is_deleted', false)
+    // Since Supabase doesn't support GROUP BY in the client library directly,
+    // we'll use Promise.all to fetch counts for each slug efficiently
+    const countPromises = postSlugs.map(async (slug) => {
+      const { count, error } = await supabase
+        .from('comments')
+        .select('*', { count: 'exact', head: true }) // head: true returns only count, not rows
+        .eq('post_slug', slug)
+        .eq('is_deleted', false)
 
-    if (error) {
+      if (error) {
+        console.error(`Error fetching count for ${slug}:`, error)
+        return { slug, count: 0 }
+      }
+
+      return { slug, count: count || 0 }
+    })
+
+    try {
+      // Execute all count queries in parallel for efficiency
+      const results = await Promise.all(countPromises)
+
+      // Map results to the counts Map
+      results.forEach(({ slug, count }) => {
+        counts.set(slug, count)
+      })
+    } catch (error) {
       console.error('Error fetching comment counts:', error)
-      return counts
-    }
-
-    // Count comments per post
-    data?.forEach((comment: unknown) => {
-      // Type guard for comment data
-      if (typeof comment === 'object' && comment !== null && 'post_slug' in comment) {
-        const typedComment = comment as { post_slug: string }
-        const current = counts.get(typedComment.post_slug) || 0
-        counts.set(typedComment.post_slug, current + 1)
-      }
-    })
-
-    // Set 0 for posts without comments
-    postSlugs.forEach(slug => {
-      if (!counts.has(slug)) {
+      // On error, set all slugs to 0
+      postSlugs.forEach(slug => {
         counts.set(slug, 0)
-      }
-    })
+      })
+    }
 
     return counts
   }

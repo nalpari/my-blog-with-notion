@@ -4,9 +4,42 @@ import { getSupabaseClient } from '@/lib/supabase/client'
 import { RealtimeChannel, RealtimePresenceState } from '@supabase/supabase-js'
 import { CommentWithReplies } from '@/types/supabase'
 
+// Public comment type that excludes sensitive fields
+export interface PublicComment {
+  id: string
+  post_slug: string
+  parent_id: string | null
+  user_id: string | null
+  user_name: string | null
+  user_avatar: string | null
+  content: string
+  is_edited: boolean
+  is_deleted: boolean
+  created_at: string
+  updated_at: string
+  replies?: PublicComment[]
+}
+
+// Typed broadcast payloads to prevent PII leakage
+export interface BroadcastPayloads {
+  'comment:new': {
+    comment: PublicComment
+  }
+  'comment:update': {
+    comment: PublicComment
+  }
+  'comment:delete': {
+    commentId: string
+  }
+  'user:typing': {
+    userId: string
+    userName: string
+  }
+}
+
 export interface RealtimeEvents {
-  'comment:new': (comment: CommentWithReplies) => void
-  'comment:update': (comment: CommentWithReplies) => void
+  'comment:new': (comment: PublicComment) => void
+  'comment:update': (comment: PublicComment) => void
   'comment:delete': (commentId: string) => void
   'user:typing': (userId: string, userName: string) => void
   'presence:sync': (users: PresenceUser[]) => void
@@ -40,6 +73,34 @@ export class RealtimeManager {
   private reconnectDelay = 1000
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private isConnected = false
+
+  /**
+   * Sanitize comment to remove sensitive fields (PII)
+   */
+  private toPublicComment(comment: CommentWithReplies): PublicComment {
+    const publicComment: PublicComment = {
+      id: comment.id,
+      post_slug: comment.post_slug,
+      parent_id: comment.parent_id,
+      user_id: comment.user_id,
+      user_name: comment.user_name,
+      user_avatar: comment.user_avatar,
+      content: comment.content,
+      is_edited: comment.is_edited,
+      is_deleted: comment.is_deleted,
+      created_at: comment.created_at,
+      updated_at: comment.updated_at
+    }
+
+    // Recursively sanitize replies if present
+    if (comment.replies && comment.replies.length > 0) {
+      publicComment.replies = comment.replies.map(reply => this.toPublicComment(reply))
+    }
+
+    // Explicitly exclude sensitive fields like user_email, deleted_at
+    // These fields are not copied to the public comment
+    return publicComment
+  }
   private connectionListeners = new Set<(connected: boolean) => void>()
 
   constructor(private postSlug: string) {}
@@ -89,19 +150,21 @@ export class RealtimeManager {
       }
     })
 
-    // Setup broadcast listeners
+    // Setup broadcast listeners with typed payloads
     if (this.channel) {
       this.channel
-        .on('broadcast', { event: 'comment:new' }, ({ payload }) => {
+        .on('broadcast', { event: 'comment:new' }, ({ payload }: { payload: BroadcastPayloads['comment:new'] }) => {
+          // Payload already contains sanitized PublicComment
           this.emit('comment:new', payload.comment)
         })
-        .on('broadcast', { event: 'comment:update' }, ({ payload }) => {
+        .on('broadcast', { event: 'comment:update' }, ({ payload }: { payload: BroadcastPayloads['comment:update'] }) => {
+          // Payload already contains sanitized PublicComment
           this.emit('comment:update', payload.comment)
         })
-        .on('broadcast', { event: 'comment:delete' }, ({ payload }) => {
+        .on('broadcast', { event: 'comment:delete' }, ({ payload }: { payload: BroadcastPayloads['comment:delete'] }) => {
           this.emit('comment:delete', payload.commentId)
         })
-        .on('broadcast', { event: 'user:typing' }, ({ payload }) => {
+        .on('broadcast', { event: 'user:typing' }, ({ payload }: { payload: BroadcastPayloads['user:typing'] }) => {
           this.emit('user:typing', payload.userId, payload.userName)
         })
 
@@ -113,23 +176,34 @@ export class RealtimeManager {
       })
 
       // Subscribe to channel with error handling
-      await this.channel.subscribe((status) => {
+      // Note: subscribe() returns RealtimeChannel, not a Promise
+      this.channel.subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
           this.isConnected = true
           this.reconnectAttempts = 0
           this.notifyConnectionListeners(true)
           console.log('Realtime connected successfully')
-        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+
+          // Track current user presence after successful subscription
+          if (this.currentUser && this.channel) {
+            try {
+              await this.channel.track(this.currentUser)
+              console.log('User presence tracked successfully')
+            } catch (error) {
+              console.error('Error tracking user presence:', error)
+            }
+          }
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           this.isConnected = false
           this.notifyConnectionListeners(false)
+
+          if (status === 'TIMED_OUT') {
+            console.warn('Realtime connection timed out, attempting reconnect...')
+          }
+
           this.handleReconnect()
         }
       })
-
-      // Track current user presence
-      if (this.currentUser && this.channel) {
-        await this.channel.track(this.currentUser)
-      }
     }
   }
 
@@ -203,28 +277,34 @@ export class RealtimeManager {
   }
 
   /**
-   * Broadcast new comment
+   * Broadcast new comment (sanitized to exclude PII)
    */
   async broadcastNewComment(comment: CommentWithReplies) {
     if (!this.channel) return
 
+    // Sanitize comment before broadcasting to prevent PII leakage
+    const publicComment = this.toPublicComment(comment)
+
     await this.channel.send({
       type: 'broadcast',
       event: 'comment:new',
-      payload: { comment }
+      payload: { comment: publicComment } as BroadcastPayloads['comment:new']
     })
   }
 
   /**
-   * Broadcast comment update
+   * Broadcast comment update (sanitized to exclude PII)
    */
   async broadcastCommentUpdate(comment: CommentWithReplies) {
     if (!this.channel) return
 
+    // Sanitize comment before broadcasting to prevent PII leakage
+    const publicComment = this.toPublicComment(comment)
+
     await this.channel.send({
       type: 'broadcast',
       event: 'comment:update',
-      payload: { comment }
+      payload: { comment: publicComment } as BroadcastPayloads['comment:update']
     })
   }
 
@@ -237,7 +317,7 @@ export class RealtimeManager {
     await this.channel.send({
       type: 'broadcast',
       event: 'comment:delete',
-      payload: { commentId }
+      payload: { commentId } as BroadcastPayloads['comment:delete']
     })
   }
 
@@ -259,7 +339,7 @@ export class RealtimeManager {
       payload: {
         userId: this.currentUser.user_id,
         userName: this.currentUser.user_name
-      }
+      } as BroadcastPayloads['user:typing']
     })
 
     // Set timeout to stop typing indicator

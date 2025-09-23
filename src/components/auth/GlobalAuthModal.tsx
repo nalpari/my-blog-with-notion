@@ -49,7 +49,6 @@ export function GlobalAuthModal() {
       isOpen={isOpen}
       onClose={closeAuthModal}
       onSuccess={handleSuccess}
-      redirectTo={redirectTo}
     />
   )
 }

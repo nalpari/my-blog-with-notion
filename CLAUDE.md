@@ -4,8 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Memo
 
-- 모든 task가 끝날때에는 린트 체크, 타입 체크, 빌드 체크를 반드시 수행.
-- 검증이나 테스트를 위해서 서버를 실행해야 할 경우, 3000포트를 이용. 다만 이미 사용중이라면 3000포트 서비스 중지후 사용. 그리고 마지막엔 항상 3000포트 서비스 중지.
+- 모든 task가 끝날때에는 build-checker sub agent를 이용해서 린트 체크, 타입 체크, 빌드 체크를 반드시 수행.
+- 검증이나 테스트를 위해서 서버를 실행해야 할 경우, 3000포트를 이용. 다만 이미 사용중이라면 3000포트 서비스 중지 후 사용. 그리고 마지막엔 항상 3000포트 서비스 중지.
 - npm 대신 pnpm 을 사용하세요.
 
 ## Project Overview

@@ -3,6 +3,21 @@ import { createClient } from '@/lib/supabase/server'
 import { updateCommentSchema } from '@/types/comment'
 import { z } from 'zod'
 
+// Define public comment type - excludes sensitive fields like user_email
+export interface PublicComment {
+  id: string
+  post_slug: string
+  parent_id: string | null
+  user_id: string | null
+  user_name: string | null
+  user_avatar: string | null
+  content: string
+  is_edited: boolean
+  is_deleted: boolean
+  created_at: string
+  updated_at: string
+}
+
 // Select only public columns, excluding PII like user_email
 const publicColumns = `
   id,
@@ -19,11 +34,12 @@ const publicColumns = `
 `
 
 // Sanitize comment data to ensure no PII is exposed
-function sanitizeComment(comment: any) {
+// Input type matches what we get from selecting publicColumns
+function sanitizeComment(comment: PublicComment | null): PublicComment | null {
   if (!comment) return null
 
   // Only return safe, public fields
-  return {
+  const publicComment: PublicComment = {
     id: comment.id,
     post_slug: comment.post_slug,
     parent_id: comment.parent_id,
@@ -37,6 +53,8 @@ function sanitizeComment(comment: any) {
     updated_at: comment.updated_at,
     // Explicitly exclude: user_email, deleted_at, and any other PII
   }
+
+  return publicComment
 }
 
 // PUT /api/comments/[id] - 댓글 수정
@@ -160,7 +178,7 @@ export async function DELETE(
     // Check if user owns the comment and it's not already deleted
     const { data: existingComment } = await supabase
       .from('comments')
-      .select('user_id, user_email, is_deleted')
+      .select('user_id, is_deleted')  // PII Security: Only fetch necessary fields
       .eq('id', id)
       .single()
 

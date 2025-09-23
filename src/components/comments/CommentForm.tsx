@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useId } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Send, Loader2 } from 'lucide-react'
@@ -112,6 +112,9 @@ export function CommentForm({
   const isNearLimit = remainingChars <= 500 // Warn when 500 chars or less remain
   const isAtLimit = remainingChars <= 0
 
+  // Generate unique ID for this form instance
+  const charCountId = useId()
+
   return (
     <form onSubmit={handleSubmit} className={cn('space-y-3', className)}>
       <div className="relative">
@@ -130,13 +133,13 @@ export function CommentForm({
             isDisabled && 'opacity-60 cursor-not-allowed'
           )}
           aria-label="Comment input"
-          aria-describedby="char-count"
+          aria-describedby={charCountId}
           aria-invalid={isAtLimit}
         />
 
         {/* Character count with accessibility */}
         <div
-          id="char-count"
+          id={charCountId}
           className={cn(
             "absolute bottom-2 right-2 text-xs",
             isAtLimit && "text-destructive font-semibold",

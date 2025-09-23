@@ -1,14 +1,14 @@
 'use client'
 
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { RealtimeManager, PresenceUser } from '@/lib/realtime/realtime-manager'
+import { RealtimeManager, PresenceUser, PublicComment } from '@/lib/realtime/realtime-manager'
 import { CommentWithReplies } from '@/types/supabase'
 
 interface UseRealtimeCommentsOptions {
   postSlug: string
   enabled?: boolean
-  onCommentAdded?: (comment: CommentWithReplies) => void
-  onCommentUpdated?: (comment: CommentWithReplies) => void
+  onCommentAdded?: (comment: CommentWithReplies | PublicComment) => void
+  onCommentUpdated?: (comment: CommentWithReplies | PublicComment) => void
   onCommentDeleted?: (commentId: string) => void
   onTyping?: (userId: string, userName: string) => void
   onUsersChanged?: (users: PresenceUser[]) => void

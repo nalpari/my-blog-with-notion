@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Users, MessageSquare, AlertCircle } from 'lucide-react'
 import { useToast } from '@/components/ui/toast-provider'
+import { CommentWithReplies } from '@/types/supabase'
 
 interface CommentsSectionProps {
   postSlug: string
@@ -74,15 +75,15 @@ export function CommentsSection({ postSlug }: CommentsSectionProps) {
   }
 
   // Helper function to recursively count comments including all nested replies
-  const countWithReplies = (comment: any): number => {
-    const replyCount = comment.replies?.reduce((sum: number, reply: any) => {
+  const countWithReplies = (comment: CommentWithReplies): number => {
+    const replyCount = comment.replies?.reduce<number>((sum, reply) => {
       return sum + countWithReplies(reply)
-    }, 0) || 0
+    }, 0) ?? 0
     return 1 + replyCount
   }
 
   // Calculate total comment count including all nested replies
-  const totalComments = comments.reduce((count, comment) => {
+  const totalComments = comments.reduce<number>((count, comment) => {
     return count + countWithReplies(comment)
   }, 0)
 

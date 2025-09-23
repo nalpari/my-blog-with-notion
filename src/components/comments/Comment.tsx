@@ -28,22 +28,71 @@ interface CommentProps {
 function isSafeHref(href: string | undefined): boolean {
   if (!href) return false
 
+  // Normalize the href:
+  // 1. Trim whitespace
+  let normalizedHref = href.trim()
+
+  // 2. Reject empty strings after trimming
+  if (!normalizedHref) return false
+
+  // 3. Attempt to decode percent-encoded characters
+  try {
+    normalizedHref = decodeURIComponent(normalizedHref)
+  } catch {
+    // If decoding fails, the URL might be malformed or double-encoded
+    // Continue with the original but be more cautious
+  }
+
+  // 4. Strip control characters and collapse whitespace
+  // Remove zero-width characters, control characters, and normalize spaces
+  normalizedHref = normalizedHref
+    .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200D\uFEFF]/g, '') // Control chars
+    .replace(/\s+/g, ' ') // Collapse multiple spaces
+    .trim()
+
+  // 5. Reject if empty after normalization
+  if (!normalizedHref) return false
+
   // Allow relative paths and fragment hashes
-  if (href.startsWith('/') || href.startsWith('#')) {
+  if (normalizedHref.startsWith('/') || normalizedHref.startsWith('#')) {
     return true
+  }
+
+  // Check for suspicious patterns before URL parsing
+  const suspiciousPatterns = [
+    'javascript:',
+    'data:',
+    'vbscript:',
+    'file:',
+    'about:',
+    'blob:',
+    'ws:',
+    'wss:'
+  ]
+
+  const lowerHref = normalizedHref.toLowerCase()
+
+  // Check at the beginning of the string (after normalization)
+  if (suspiciousPatterns.some(pattern => lowerHref.startsWith(pattern))) {
+    return false
+  }
+
+  // Also check if these patterns appear anywhere (e.g., after encoding tricks)
+  if (suspiciousPatterns.some(pattern => lowerHref.includes(pattern))) {
+    return false
   }
 
   // Parse and validate URL protocols
   try {
-    const url = new URL(href)
+    const url = new URL(normalizedHref)
     const allowedProtocols = ['http:', 'https:', 'mailto:', 'tel:']
     return allowedProtocols.includes(url.protocol)
   } catch {
     // If URL parsing fails, it might be a relative path without leading /
-    // Only allow if it doesn't contain suspicious patterns
-    const suspiciousPatterns = ['javascript:', 'data:', 'vbscript:', 'file:']
-    const lowerHref = href.toLowerCase()
-    return !suspiciousPatterns.some(pattern => lowerHref.includes(pattern))
+    // Be extra cautious and reject unless it's clearly safe
+    // Only allow alphanumeric, dash, underscore, dot, and forward slash
+    const safeRelativePattern = /^[a-zA-Z0-9\-_./]+$/
+    return safeRelativePattern.test(normalizedHref)
   }
 }
 
@@ -61,9 +110,9 @@ export function Comment({
 
   // Security fix: Only authenticated users can edit/delete their own comments
   // Anonymous comments cannot be edited/deleted
-  const isAuthor = currentUserId &&
+  const isAuthor = !!(currentUserId &&
     comment.user_id &&
-    comment.user_id === currentUserId
+    comment.user_id === currentUserId)
 
   const userName = comment.user_name || 'Anonymous'
   const userInitial = userName[0].toUpperCase()
@@ -171,14 +220,30 @@ export function Comment({
                         )
                       }
 
-                      // For relative paths, don't open in new tab
-                      const isExternal = href && (href.startsWith('http') || href.startsWith('mailto:') || href.startsWith('tel:'))
+                      // Normalize href for consistent handling
+                      const normalizedHref = href?.trim() || ''
+
+                      // Determine if link is external
+                      const isHttpExternal = normalizedHref.startsWith('http://') || normalizedHref.startsWith('https://')
+                      const isMailto = normalizedHref.startsWith('mailto:')
+                      const isTel = normalizedHref.startsWith('tel:')
+                      const isExternal = isHttpExternal || isMailto || isTel
+
+                      // Build rel attribute for security
+                      const relAttributes = []
+                      if (isExternal) {
+                        relAttributes.push('noopener') // Prevents window.opener access
+                        relAttributes.push('noreferrer') // Prevents referrer leakage
+                        relAttributes.push('nofollow') // Prevents SEO value transfer
+                      }
 
                       return (
                         <a
-                          href={href}
-                          target={isExternal ? "_blank" : undefined}
-                          rel={isExternal ? "noopener noreferrer" : undefined}
+                          href={normalizedHref}
+                          // Only add target="_blank" for external http/https links
+                          target={isHttpExternal ? "_blank" : undefined}
+                          // Apply security attributes for all external links
+                          rel={relAttributes.length > 0 ? relAttributes.join(' ') : undefined}
                           className="text-primary underline-offset-2 hover:underline"
                         >
                           {children}
