@@ -25,9 +25,14 @@ export interface TypingUser {
   timestamp: number
 }
 
+// Helper type for type-safe listener map
+type ListenerMap = {
+  [K in keyof RealtimeEvents]: Set<RealtimeEvents[K]>
+}
+
 export class RealtimeManager {
   private channel: RealtimeChannel | null = null
-  private listeners = new Map<keyof RealtimeEvents, Set<(...args: any[]) => void>>()
+  private listeners: Partial<ListenerMap> = {}
   private typingTimeout: ReturnType<typeof setTimeout> | null = null
   private currentUser: PresenceUser | null = null
   private reconnectAttempts = 0
@@ -143,7 +148,7 @@ export class RealtimeManager {
     const supabase = getSupabaseClient()
     await supabase.removeChannel(this.channel)
     this.channel = null
-    this.listeners.clear()
+    this.listeners = {}
     this.connectionListeners.clear()
     this.isConnected = false
 
@@ -160,14 +165,18 @@ export class RealtimeManager {
     event: K,
     callback: RealtimeEvents[K]
   ) {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set())
+    if (!this.listeners[event]) {
+      this.listeners[event] = new Set<RealtimeEvents[K]>() as ListenerMap[K]
     }
-    this.listeners.get(event)!.add(callback as (...args: any[]) => void)
+    const eventListeners = this.listeners[event]!
+    eventListeners.add(callback)
 
     // Return unsubscribe function
     return () => {
-      this.listeners.get(event)?.delete(callback as (...args: any[]) => void)
+      const eventListeners = this.listeners[event]
+      if (eventListeners) {
+        eventListeners.delete(callback)
+      }
     }
   }
 
@@ -178,12 +187,15 @@ export class RealtimeManager {
     event: K,
     ...args: Parameters<RealtimeEvents[K]>
   ) {
-    const callbacks = this.listeners.get(event)
+    const callbacks = this.listeners[event]
     if (!callbacks) return
 
     callbacks.forEach(callback => {
       try {
-        callback(...args)
+        // Type-safe invocation - callback is already typed as RealtimeEvents[K]
+        // We need to cast to extract the function signature
+        const typedCallback = callback as (...args: Parameters<RealtimeEvents[K]>) => void
+        typedCallback(...args)
       } catch (error) {
         console.error(`Error in ${event} listener:`, error)
       }
