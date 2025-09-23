@@ -3,6 +3,9 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from 'next-themes'
 import { ProgressBarProvider } from '@/components/progress-bar-provider'
+import { ToastProvider } from '@/components/ui/toast-provider'
+import { AuthModalProvider } from '@/contexts/AuthModalContext'
+import { GlobalAuthModal } from '@/components/auth/GlobalAuthModal'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -84,11 +87,16 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ProgressBarProvider>
-            <div className="relative flex min-h-screen flex-col">
-              <div className="flex-1">{children}</div>
-            </div>
-          </ProgressBarProvider>
+          <ToastProvider>
+            <AuthModalProvider>
+              <ProgressBarProvider>
+                <div className="relative flex min-h-screen flex-col">
+                  <div className="flex-1">{children}</div>
+                </div>
+              </ProgressBarProvider>
+              <GlobalAuthModal />
+            </AuthModalProvider>
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -1,5 +1,4 @@
 import { Metadata } from 'next'
-import { getAllTags } from '@/lib/notion'
 import { TagsPageClient } from '@/components/tags/TagsPageClient'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
@@ -10,11 +9,6 @@ export const metadata: Metadata = {
 }
 
 export default async function TagsPage() {
-  // SSR로 초기 태그 데이터 가져오기 (SEO 및 초기 로딩 최적화)
-  const tags = await getAllTags()
-  
-  // 전체 포스트 수 계산
-  const totalPosts = tags.reduce((sum, tag) => sum + tag.count, 0)
 
   return (
     <div className="min-h-screen bg-background">

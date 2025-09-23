@@ -9,6 +9,7 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { ScrollToTopButton } from '@/components/scroll-to-top-button'
+import { CommentsSection } from '@/components/comments/CommentsSection'
 
 import { POSTS_CONFIG } from '@/config/constants'
 import { MESSAGES } from '@/config/messages'
@@ -258,6 +259,9 @@ export default async function PostPage({ params }: PostPageProps) {
               {content || post.excerpt || '콘텐츠를 불러오는 중...'}
             </ReactMarkdown>
           </div>
+
+          {/* Comments Section */}
+          <CommentsSection postSlug={slug} />
         </article>
       </div>
       <ScrollToTopButton />
