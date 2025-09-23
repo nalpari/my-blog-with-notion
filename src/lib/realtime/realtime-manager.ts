@@ -386,8 +386,16 @@ export class RealtimeManager {
    * Handle reconnection logic
    */
   private async handleReconnect() {
+    // Clear any existing reconnect timer to prevent overlapping timers
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
+    }
+
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.warn('Max reconnection attempts reached. Stopping reconnection.')
+      // Reset attempts for future reconnection cycles
+      this.reconnectAttempts = 0
       // 더 이상 재연결 시도하지 않고 정상적으로 종료
       await this.unsubscribe()
       return
@@ -399,6 +407,9 @@ export class RealtimeManager {
     console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms`)
 
     this.reconnectTimer = setTimeout(async () => {
+      // Clear timer reference immediately when callback runs
+      this.reconnectTimer = null
+
       try {
         // Unsubscribe old channel
         if (this.channel) {
@@ -408,9 +419,12 @@ export class RealtimeManager {
         }
 
         // Re-subscribe
+        // Note: reconnectAttempts will be reset to 0 on successful SUBSCRIBED status
         await this.subscribe()
       } catch (error) {
         console.error('Reconnection failed:', error)
+        // Ensure timer is null before recursive call
+        this.reconnectTimer = null
         this.handleReconnect()
       }
     }, delay)
