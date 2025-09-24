@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { Client } from '@notionhq/client'
 
 const notion = new Client({
@@ -6,26 +6,53 @@ const notion = new Client({
 })
 
 const DATABASE_ID = process.env.NOTION_DATABASE_ID!
+const DEBUG_SECRET = process.env.DEBUG_SECRET || process.env.REVALIDATE_SECRET // 디버그용 시크릿 토큰
 
 /**
  * GET /api/tags/debug
- * 
+ *
  * 디버깅용 엔드포인트 - 실제 Notion 데이터 구조 확인
+ * Production에서는 비활성화되며, 개발 환경에서도 Bearer 토큰 인증 필요
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // 1. Production 환경에서는 접근 차단
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { error: 'Not found' },
+        { status: 404 }
+      )
+    }
+
+    // 2. Bearer 토큰 검증
+    const authHeader = request.headers.get('Authorization')
+    const token = request.nextUrl.searchParams.get('token') // 쿼리 파라미터로도 받을 수 있도록
+
+    const providedToken = authHeader?.replace('Bearer ', '') || token
+
+    if (!providedToken || !DEBUG_SECRET || providedToken !== DEBUG_SECRET) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     console.log('🔍 Starting debug analysis...')
-    
+
+    // 3. URL 파라미터에서 옵션 파싱
+    const pageSize = parseInt(request.nextUrl.searchParams.get('page_size') || '5', 10)
+    const statusFilter = request.nextUrl.searchParams.get('status') || 'Published'
+
     // 첫 번째 페이지만 가져와서 구조 분석
     const response = await notion.databases.query({
       database_id: DATABASE_ID,
       filter: {
         property: 'status',
         select: {
-          equals: 'Published',
+          equals: statusFilter,
         },
       },
-      page_size: 5, // 처음 5개만
+      page_size: Math.min(pageSize, 100), // 최대 100개로 제한
     })
 
     const debugInfo = {
@@ -49,14 +76,14 @@ export async function GET() {
         }
       }),
       // 데이터베이스 스키마 정보
-      databaseSchema: null
+      databaseSchema: null as any
     }
 
     // 데이터베이스 스키마도 가져오기
     try {
       const dbInfo = await notion.databases.retrieve({ database_id: DATABASE_ID })
       debugInfo.databaseSchema = {
-        title: dbInfo.title,
+        title: (dbInfo as any).title || 'Database',
         properties: Object.keys(dbInfo.properties).reduce((acc: any, key) => {
           const prop = (dbInfo.properties as any)[key]
           acc[key] = {
