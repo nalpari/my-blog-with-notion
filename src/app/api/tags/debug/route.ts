@@ -1,4 +1,4 @@
-import { NextResponse, NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
 
 const notion = new Client({
@@ -14,7 +14,7 @@ const DEBUG_SECRET = process.env.DEBUG_SECRET || process.env.REVALIDATE_SECRET /
  * 디버깅용 엔드포인트 - 실제 Notion 데이터 구조 확인
  * Production에서는 비활성화되며, 개발 환경에서도 Bearer 토큰 인증 필요
  */
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
     // 1. Production 환경에서는 접근 차단
     if (process.env.NODE_ENV === 'production') {
@@ -24,9 +24,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // URL 객체 생성하여 안전하게 파라미터 추출
+    const url = new URL(request.url)
+    const searchParams = url.searchParams
+
     // 2. Bearer 토큰 검증
     const authHeader = request.headers.get('Authorization')
-    const token = request.nextUrl.searchParams.get('token') // 쿼리 파라미터로도 받을 수 있도록
+    const token = searchParams.get('token') // 쿼리 파라미터로도 받을 수 있도록
 
     const providedToken = authHeader?.replace('Bearer ', '') || token
 
@@ -40,14 +44,14 @@ export async function GET(request: NextRequest) {
     console.log('🔍 Starting debug analysis...')
 
     // 3. URL 파라미터에서 옵션 파싱
-    const pageSizeParam = request.nextUrl.searchParams.get('page_size')
+    const pageSizeParam = searchParams.get('page_size')
     const parsedPageSize = parseInt(pageSizeParam || '5', 10)
     // NaN 체크 후 안전한 기본값 사용, 1-100 범위로 제한
     const pageSize = isNaN(parsedPageSize)
       ? 5
       : Math.max(1, Math.min(parsedPageSize, 100))
 
-    const statusFilter = request.nextUrl.searchParams.get('status') || 'Published'
+    const statusFilter = searchParams.get('status') || 'Published'
 
     // 첫 번째 페이지만 가져와서 구조 분석
     const response = await notion.databases.query({
