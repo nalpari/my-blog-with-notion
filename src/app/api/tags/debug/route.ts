@@ -17,6 +17,33 @@ const notion = new Client({
 const DATABASE_ID = process.env.NOTION_DATABASE_ID!
 const DEBUG_SECRET = process.env.DEBUG_SECRET || process.env.REVALIDATE_SECRET // 디버그용 시크릿 토큰
 
+// Debug response type definition
+type DebugInfo = {
+  totalResults: number
+  hasMore: boolean
+  samplePosts: Array<{
+    id: string
+    title: string
+    status: string
+    tags: {
+      raw: unknown
+      processed: Array<{
+        id: string
+        name: string
+        color: string
+        isEmpty: boolean
+      }>
+    }
+  }>
+  databaseSchema: {
+    title: string
+    properties: Record<string, {
+      type: string
+      name: string
+    }>
+  } | null
+}
+
 /**
  * GET /api/tags/debug
  *
@@ -115,7 +142,7 @@ export async function GET(request: Request) {
 
     const response: QueryDatabaseResponse = await notion.databases.query(queryOptions)
 
-    const debugInfo = {
+    const debugInfo: DebugInfo = {
       totalResults: response.results.length,
       hasMore: response.has_more,
       samplePosts: response.results.map((page) => {
