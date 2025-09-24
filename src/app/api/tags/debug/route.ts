@@ -40,7 +40,13 @@ export async function GET(request: NextRequest) {
     console.log('🔍 Starting debug analysis...')
 
     // 3. URL 파라미터에서 옵션 파싱
-    const pageSize = parseInt(request.nextUrl.searchParams.get('page_size') || '5', 10)
+    const pageSizeParam = request.nextUrl.searchParams.get('page_size')
+    const parsedPageSize = parseInt(pageSizeParam || '5', 10)
+    // NaN 체크 후 안전한 기본값 사용, 1-100 범위로 제한
+    const pageSize = isNaN(parsedPageSize)
+      ? 5
+      : Math.max(1, Math.min(parsedPageSize, 100))
+
     const statusFilter = request.nextUrl.searchParams.get('status') || 'Published'
 
     // 첫 번째 페이지만 가져와서 구조 분석
@@ -52,7 +58,7 @@ export async function GET(request: NextRequest) {
           equals: statusFilter,
         },
       },
-      page_size: Math.min(pageSize, 100), // 최대 100개로 제한
+      page_size: pageSize, // 항상 1-100 사이의 정수
     })
 
     const debugInfo = {
