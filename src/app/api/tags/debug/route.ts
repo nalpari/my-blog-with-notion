@@ -53,27 +53,72 @@ export async function GET(request: Request) {
 
     const statusFilter = searchParams.get('status') || 'Published'
 
-    // 첫 번째 페이지만 가져와서 구조 분석
-    const response = await notion.databases.query({
+    // 먼저 데이터베이스 스키마를 가져와서 속성 타입 확인
+    const dbInfo = await notion.databases.retrieve({ database_id: DATABASE_ID })
+    const statusProperty = (dbInfo.properties as any).status
+
+    // status 속성의 타입에 따라 필터 동적 생성
+    let filter: any = {}
+    if (statusProperty) {
+      const statusPropertyType = statusProperty.type
+
+      if (statusPropertyType === 'status') {
+        // status 타입일 때
+        filter = {
+          property: 'status',
+          status: {
+            equals: statusFilter,
+          },
+        }
+      } else if (statusPropertyType === 'select') {
+        // select 타입일 때
+        filter = {
+          property: 'status',
+          select: {
+            equals: statusFilter,
+          },
+        }
+      } else {
+        // 다른 타입일 경우 기본값으로 select 사용
+        console.warn(`Unexpected status property type: ${statusPropertyType}, using select filter`)
+        filter = {
+          property: 'status',
+          select: {
+            equals: statusFilter,
+          },
+        }
+      }
+    } else {
+      // status 속성이 없을 경우
+      console.warn('No status property found in database schema')
+      filter = undefined
+    }
+
+    // 데이터 쿼리 실행
+    const queryOptions: any = {
       database_id: DATABASE_ID,
-      filter: {
-        property: 'status',
-        select: {
-          equals: statusFilter,
-        },
-      },
       page_size: pageSize, // 항상 1-100 사이의 정수
-    })
+    }
+
+    if (filter) {
+      queryOptions.filter = filter
+    }
+
+    const response = await notion.databases.query(queryOptions)
 
     const debugInfo = {
       totalResults: response.results.length,
       hasMore: response.has_more,
       samplePosts: response.results.map((page: any) => {
         const properties = page.properties
+        const statusValue = statusProperty?.type === 'status'
+          ? properties.status?.status?.name
+          : properties.status?.select?.name
+
         return {
           id: page.id,
           title: properties.title?.title?.[0]?.plain_text || 'No title',
-          status: properties.status?.select?.name || 'No status',
+          status: statusValue || 'No status',
           tags: {
             raw: properties.tags,
             processed: properties.tags?.multi_select?.map((tag: any) => ({
@@ -86,13 +131,7 @@ export async function GET(request: Request) {
         }
       }),
       // 데이터베이스 스키마 정보
-      databaseSchema: null as any
-    }
-
-    // 데이터베이스 스키마도 가져오기
-    try {
-      const dbInfo = await notion.databases.retrieve({ database_id: DATABASE_ID })
-      debugInfo.databaseSchema = {
+      databaseSchema: {
         title: (dbInfo as any).title || 'Database',
         properties: Object.keys(dbInfo.properties).reduce((acc: any, key) => {
           const prop = (dbInfo.properties as any)[key]
@@ -103,8 +142,6 @@ export async function GET(request: Request) {
           return acc
         }, {})
       }
-    } catch (schemaError) {
-      console.error('Error fetching database schema:', schemaError)
     }
 
     console.log('🔍 Debug info collected:', JSON.stringify(debugInfo, null, 2))
