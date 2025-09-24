@@ -1,5 +1,14 @@
 import { NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
+import type {
+  QueryDatabaseResponse,
+  PageObjectResponse,
+  GetDatabaseResponse,
+  SelectPropertyItemObjectResponse,
+  StatusPropertyItemObjectResponse,
+  MultiSelectPropertyItemObjectResponse,
+  QueryDatabaseParameters
+} from '@notionhq/client/build/src/api-endpoints'
 
 const notion = new Client({
   auth: process.env.NOTION_TOKEN,
@@ -54,11 +63,11 @@ export async function GET(request: Request) {
     const statusFilter = searchParams.get('status') || 'Published'
 
     // 먼저 데이터베이스 스키마를 가져와서 속성 타입 확인
-    const dbInfo = await notion.databases.retrieve({ database_id: DATABASE_ID })
-    const statusProperty = (dbInfo.properties as any).status
+    const dbInfo: GetDatabaseResponse = await notion.databases.retrieve({ database_id: DATABASE_ID })
+    const statusProperty = dbInfo.properties.status
 
     // status 속성의 타입에 따라 필터 동적 생성
-    let filter: any = {}
+    let filter: QueryDatabaseParameters['filter'] | undefined
     if (statusProperty) {
       const statusPropertyType = statusProperty.type
 
@@ -95,7 +104,7 @@ export async function GET(request: Request) {
     }
 
     // 데이터 쿼리 실행
-    const queryOptions: any = {
+    const queryOptions: QueryDatabaseParameters = {
       database_id: DATABASE_ID,
       page_size: pageSize, // 항상 1-100 사이의 정수
     }
@@ -104,37 +113,73 @@ export async function GET(request: Request) {
       queryOptions.filter = filter
     }
 
-    const response = await notion.databases.query(queryOptions)
+    const response: QueryDatabaseResponse = await notion.databases.query(queryOptions)
 
     const debugInfo = {
       totalResults: response.results.length,
       hasMore: response.has_more,
-      samplePosts: response.results.map((page: any) => {
-        const properties = page.properties
-        const statusValue = statusProperty?.type === 'status'
-          ? properties.status?.status?.name
-          : properties.status?.select?.name
+      samplePosts: response.results.map((page) => {
+        // Type guard to ensure it's a PageObjectResponse
+        if (!('properties' in page)) {
+          return {
+            id: page.id,
+            title: 'No title',
+            status: 'No status',
+            tags: { raw: undefined, processed: [] }
+          }
+        }
+
+        const pageObject = page as PageObjectResponse
+        const properties = pageObject.properties
+
+        // Extract status value based on property type
+        let statusValue: string | undefined
+        if (statusProperty?.type === 'status' && properties.status?.type === 'status') {
+          const statusProp = properties.status as StatusPropertyItemObjectResponse
+          statusValue = statusProp.status?.name
+        } else if (statusProperty?.type === 'select' && properties.status?.type === 'select') {
+          const selectProp = properties.status as SelectPropertyItemObjectResponse
+          statusValue = selectProp.select?.name
+        }
+
+        // Extract title
+        let title = 'No title'
+        if (properties.title?.type === 'title') {
+          const titleProp = properties.title
+          if ('title' in titleProp && Array.isArray(titleProp.title) && titleProp.title.length > 0) {
+            title = titleProp.title[0]?.plain_text || 'No title'
+          }
+        }
+
+        // Extract tags
+        let processedTags: Array<{ id: string; name: string; color: string; isEmpty: boolean }> = []
+        if (properties.tags?.type === 'multi_select') {
+          const tagsProp = properties.tags as MultiSelectPropertyItemObjectResponse
+          processedTags = tagsProp.multi_select.map(tag => ({
+            id: tag.id,
+            name: tag.name,
+            color: tag.color,
+            isEmpty: !tag.name || tag.name.trim().length === 0
+          }))
+        }
 
         return {
-          id: page.id,
-          title: properties.title?.title?.[0]?.plain_text || 'No title',
+          id: pageObject.id,
+          title,
           status: statusValue || 'No status',
           tags: {
             raw: properties.tags,
-            processed: properties.tags?.multi_select?.map((tag: any) => ({
-              id: tag.id,
-              name: tag.name,
-              color: tag.color,
-              isEmpty: !tag.name || tag.name.trim().length === 0
-            })) || []
+            processed: processedTags
           }
         }
       }),
       // 데이터베이스 스키마 정보
       databaseSchema: {
-        title: (dbInfo as any).title || 'Database',
-        properties: Object.keys(dbInfo.properties).reduce((acc: any, key) => {
-          const prop = (dbInfo.properties as any)[key]
+        title: ('title' in dbInfo && Array.isArray(dbInfo.title) && dbInfo.title.length > 0)
+          ? dbInfo.title[0]?.plain_text || 'Database'
+          : 'Database',
+        properties: Object.keys(dbInfo.properties).reduce<Record<string, { type: string; name: string }>>((acc, key) => {
+          const prop = dbInfo.properties[key]
           acc[key] = {
             type: prop.type,
             name: prop.name || key
