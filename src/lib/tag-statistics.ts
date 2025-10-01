@@ -10,10 +10,20 @@ export function calculateTagStatistics(
   posts: Post[],
   targetTagSlug: string
 ): TagStatistics {
-  const monthlyTrend = calculateMonthlyTrend(posts)
-  const relatedTags = calculateRelatedTags(posts, targetTagSlug)
-  const postDistribution = calculatePostDistribution(posts)
-  const topPosts = posts.slice(0, 5)
+  const filteredPosts = posts.filter((post) => {
+    return (
+      post.status === 'Published' &&
+      post.tags.some((tag) => tag.slug === targetTagSlug)
+    )
+  })
+
+  const monthlyTrend = calculateMonthlyTrend(filteredPosts)
+  const relatedTags = calculateRelatedTags(filteredPosts, targetTagSlug)
+  const postDistribution = calculatePostDistribution(filteredPosts)
+  
+  const topPosts = filteredPosts
+    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+    .slice(0, 5)
 
   return {
     monthlyTrend,
@@ -52,10 +62,19 @@ function calculateRelatedTags(
   posts: Post[],
   targetTagSlug: string
 ): RelatedTagData[] {
-  const tagCoOccurrence = new Map<string, { count: number; tag: Tag }>()
-  const targetTagCount = posts.length
+  const postsWithTargetTag = posts.filter((post) =>
+    post.tags.some((tag) => tag.slug === targetTagSlug)
+  )
 
-  posts.forEach((post) => {
+  const targetTagCount = postsWithTargetTag.length
+
+  if (targetTagCount === 0) {
+    return []
+  }
+
+  const tagCoOccurrence = new Map<string, { count: number; tag: Tag }>()
+
+  postsWithTargetTag.forEach((post) => {
     post.tags.forEach((tag) => {
       if (tag.slug === targetTagSlug) return
 
@@ -94,11 +113,12 @@ function calculatePostDistribution(posts: Post[]): PostDistributionData[] {
     .slice(-30)
 
   return sortedDistribution.map(([date, posts]) => {
-    const dateObj = new Date(date)
+    // Ensure UTC parsing by appending T00:00:00Z to prevent timezone shift
+    const dateObj = new Date(`${date}T00:00:00Z`)
     return {
       date,
       posts,
-      dayOfWeek: dateObj.getDay(),
+      dayOfWeek: dateObj.getUTCDay(),
     }
   })
 }

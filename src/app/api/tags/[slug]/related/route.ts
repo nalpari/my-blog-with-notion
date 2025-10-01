@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getPostsByTag, getAllTags } from '@/lib/notion'
+import { getAllPostsByTag } from '@/lib/notion'
 import { calculateTagStatistics } from '@/lib/tag-statistics'
 import type { RelatedTagsResponse } from '@/types/tag-statistics'
 
@@ -12,14 +12,20 @@ export async function GET(
   try {
     const { slug } = await params
 
-    const { posts } = await getPostsByTag(slug)
+    const posts = await getAllPostsByTag(slug)
 
     if (posts.length === 0) {
       return NextResponse.json({ error: 'Tag not found' }, { status: 404 })
     }
 
-    const allTags = await getAllTags()
-    const tag = allTags.find((t) => t.slug === slug)
+    let tag = null
+    for (const post of posts) {
+      const foundTag = post.tags.find((t) => t.slug === slug)
+      if (foundTag) {
+        tag = foundTag
+        break
+      }
+    }
 
     if (!tag) {
       return NextResponse.json({ error: 'Tag not found' }, { status: 404 })

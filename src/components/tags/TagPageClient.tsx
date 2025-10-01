@@ -8,12 +8,13 @@ import { TagPageHeader } from '@/components/tags/TagCloud'
 import { TagTrendChart, TagCorrelationChart, PostDistributionHeatmap } from '@/components/tags/TagTrendChart'
 import { TagCloudCard } from '@/components/tags/EnhancedTagCloud'
 import type { Tag } from '@/types/notion'
-import type { MonthlyTrendData, RelatedTagData } from '@/types/tag-statistics'
+import type { MonthlyTrendData, RelatedTagData, PostDistributionData, TagStatistics } from '@/types/tag-statistics'
 
 interface TagPageClientProps {
   tag: Tag
   initialPostCount: number
   allTags?: Array<Tag & { count: number }>
+  statistics?: TagStatistics
 }
 
 /**
@@ -31,7 +32,7 @@ interface TagPageClientProps {
  * - 반응형 그리드 레이아웃
  * - 태그 통계 시각화 (트렌드, 연관 태그, 히트맵, 워드클라우드)
  */
-export function TagPageClient({ tag, initialPostCount, allTags = [] }: TagPageClientProps) {
+export function TagPageClient({ tag, initialPostCount, allTags = [], statistics }: TagPageClientProps) {
   const {
     posts,
     loading,
@@ -41,29 +42,54 @@ export function TagPageClient({ tag, initialPostCount, allTags = [] }: TagPageCl
     refresh
   } = usePostsByTag(tag.slug)
 
-  // 목 데이터 생성 (Phase 3에서 실제 API로 교체 예정)
-  const mockTrendData: MonthlyTrendData[] = React.useMemo(() => {
+  const isDev = process.env.NODE_ENV === 'development'
+
+  const trendData: MonthlyTrendData[] = React.useMemo(() => {
+    if (statistics?.monthlyTrend?.length) {
+      return statistics.monthlyTrend
+    }
+
+    if (!isDev) {
+      return []
+    }
+
     const months = ['2024-07', '2024-08', '2024-09', '2024-10']
     return months.map((month, index) => ({
       month,
       count: Math.floor(Math.random() * 5) + 1,
-      growthRate: index > 0 ? (Math.random() * 0.4) - 0.2 : 0,
+      growthRate: index > 0 ? Math.random() * 0.4 - 0.2 : 0,
     }))
-  }, [])
+  }, [isDev, statistics?.monthlyTrend])
 
-  const mockRelatedTags: RelatedTagData[] = React.useMemo(() => {
+  const relatedData: RelatedTagData[] = React.useMemo(() => {
+    if (statistics?.relatedTags?.length) {
+      return statistics.relatedTags
+    }
+
+    if (!isDev) {
+      return []
+    }
+
     return allTags
-      .filter(t => t.slug !== tag.slug)
+      .filter((t) => t.slug !== tag.slug)
       .slice(0, 6)
       .map((t) => ({
         tag: t,
         correlation: Math.random() * 0.5 + 0.5,
         coOccurrenceCount: Math.floor(Math.random() * 5) + 1,
       }))
-  }, [allTags, tag.slug])
+  }, [allTags, isDev, statistics?.relatedTags, tag.slug])
 
-  const mockDistributionData = React.useMemo(() => {
-    const data = []
+  const distributionData: PostDistributionData[] = React.useMemo(() => {
+    if (statistics?.postDistribution?.length) {
+      return statistics.postDistribution
+    }
+
+    if (!isDev) {
+      return []
+    }
+
+    const data: PostDistributionData[] = []
     const startDate = new Date('2024-09-01')
     for (let i = 0; i < 28; i++) {
       const date = new Date(startDate)
@@ -75,7 +101,7 @@ export function TagPageClient({ tag, initialPostCount, allTags = [] }: TagPageCl
       })
     }
     return data
-  }, [])
+  }, [isDev, statistics?.postDistribution])
 
   // 로딩 상태 (초기 로딩)
   if (loading && posts.length === 0) {
@@ -145,12 +171,12 @@ export function TagPageClient({ tag, initialPostCount, allTags = [] }: TagPageCl
 
         {/* 태그 통계 시각화 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <TagTrendChart data={mockTrendData} />
-          <TagCorrelationChart data={mockRelatedTags} />
+          <TagTrendChart data={trendData} />
+          <TagCorrelationChart data={relatedData} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <PostDistributionHeatmap data={mockDistributionData} />
+          <PostDistributionHeatmap data={distributionData} />
           {allTags.length > 0 && <TagCloudCard tags={allTags} maxTags={20} />}
         </div>
 

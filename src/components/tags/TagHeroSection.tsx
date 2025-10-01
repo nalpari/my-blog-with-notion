@@ -151,15 +151,27 @@ export function RelatedTagsCard({ tags, maxTags = 8 }: RelatedTagsCardProps) {
               
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
-                  <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all duration-300"
-                      style={{ width: `${tag.correlation * 100}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground font-medium">
-                    {Math.round(tag.correlation * 100)}%
-                  </span>
+                  {(() => {
+                    const rawCorrelation =
+                      typeof tag.correlation === 'number' && Number.isFinite(tag.correlation)
+                        ? tag.correlation
+                        : 0
+                    const clampedPercent = Math.min(100, Math.max(0, rawCorrelation * 100))
+
+                    return (
+                      <>
+                        <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary rounded-full transition-all duration-300"
+                            style={{ width: `${clampedPercent}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-muted-foreground font-medium">
+                          {Math.round(clampedPercent)}%
+                        </span>
+                      </>
+                    )
+                  })()}
                 </div>
                 
                 <svg

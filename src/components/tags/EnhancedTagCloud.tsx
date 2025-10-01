@@ -104,7 +104,10 @@ export function EnhancedTagCloud({ tags, className }: EnhancedTagCloudProps) {
       .size([width, height])
       .words(words)
       .padding(4)
-      .rotate(() => (Math.random() > 0.7 ? -90 : 0))
+      .rotate((_, i) => {
+        const hash = words[i]?.text.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) || 0
+        return hash % 10 < 3 ? -90 : 0
+      })
       .font('system-ui, -apple-system, sans-serif')
       .fontSize((d) => d.size)
       .spiral('archimedean')
