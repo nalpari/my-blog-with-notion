@@ -2,11 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Memo
+## Development Rules
 
-- 모든 task가 끝날때에는 build-checker sub agent를 이용해서 린트 체크, 타입 체크, 빌드 체크를 반드시 수행.
-- 검증이나 테스트를 위해서 서버를 실행해야 할 경우, 3000포트를 이용. 다만 이미 사용중이라면 3000포트 서비스 중지 후 사용. 그리고 마지막엔 항상 3000포트 서비스 중지.
-- npm 대신 pnpm 을 사용하세요.
+- **Package Manager**: Use `pnpm` exclusively (not npm/yarn)
+- **Port**: Always use port 3000. Kill existing 3000 port services before starting, clean up after completion
+- **Validation**: Run build-checker sub-agent for lint, type check, and build verification after completing any task
+- **TypeScript**: Maintain strict mode - absolutely no `any` types allowed
 
 ## Project Overview
 
@@ -15,14 +16,17 @@ Next.js 15 blog application using Notion as a headless CMS with Supabase for com
 ## Essential Commands
 
 ```bash
-# Development
-npm run dev      # Start dev server with Turbopack (http://localhost:3000)
-npm run build    # Production build with SSG
-npm run start    # Run production server
-npm run lint     # Lint with Next.js ESLint config
+# Development (always use pnpm)
+pnpm dev         # Start dev server with Turbopack (http://localhost:3000)
+pnpm build       # Production build with SSG
+pnpm start       # Run production server
+pnpm lint        # Lint with Next.js ESLint config
 
 # Type checking (no built-in script)
-npx tsc --noEmit
+pnpm exec tsc --noEmit
+
+# Port management
+lsof -ti:3000 | xargs kill -9  # Kill process on port 3000 if needed
 ```
 
 ## Architecture
@@ -32,9 +36,14 @@ npx tsc --noEmit
 1. **Content Source**: Notion database → API via `@notionhq/client`
 2. **Build Process**: SSG at build time for post pages
 3. **Content Pipeline**: Notion blocks → Markdown (`notion-to-md`) → React components (`react-markdown`)
-4. **API Layer**: `/api/posts`, `/api/tags`, `/api/comments` endpoints with cursor-based pagination
-5. **Authentication**: Supabase Auth with Google OAuth
-6. **Realtime**: Supabase Realtime for live comment updates
+4. **API Layer**: RESTful API routes with cursor-based pagination
+   - `/api/posts`: Post listing with search, category filter, pagination
+   - `/api/tags`: Tag aggregation and filtering
+   - `/api/comments`: CRUD operations with nested replies
+   - `/api/comments/[id]`: Individual comment updates/deletes
+   - `/auth/callback`: OAuth callback handler for Google authentication
+5. **Authentication**: Supabase Auth with Google OAuth (requires Google Cloud Console setup)
+6. **Realtime**: Supabase Realtime for live comment updates via WebSocket
 
 ### Key Abstractions
 
@@ -47,10 +56,13 @@ npx tsc --noEmit
 
 **Supabase Integration**
 
-- `src/lib/supabase/client.ts`: Browser client with singleton pattern
+- `src/lib/supabase/client.ts`: Browser client with singleton pattern and fail-fast environment validation
 - `src/lib/supabase/server.ts`: Server client for SSR/API routes
-- `src/lib/realtime/realtime-manager.ts`: WebSocket connection management
-- `src/services/comments.service.ts`: Comment CRUD operations
+- `src/lib/realtime/realtime-manager.ts`: WebSocket connection management for live comment updates
+- `src/services/comments.service.ts`: Comment CRUD operations with circuit breaker, request queue, and retry logic
+- `src/lib/network/retry-handler.ts`: Centralized network resilience with exponential backoff
+- `src/lib/comments/optimistic-updates.ts`: Optimistic UI updates for better UX
+- `src/lib/cache/comment-cache.ts`: Comment caching layer for performance
 
 **Type System (`src/types/`)**
 
@@ -79,14 +91,16 @@ Required in `.env.local`:
 
 ```bash
 # Notion (required)
-NOTION_TOKEN=secret_xxx           # Notion integration token
+NOTION_TOKEN=secret_xxx           # Notion integration token from https://www.notion.so/my-integrations
 NOTION_DATABASE_ID=xxx            # Database ID from Notion URL
-EXPOSE_PERSON_EMAIL=false         # Control author email exposure
+EXPOSE_PERSON_EMAIL=false         # Control author email exposure (default: false)
 
-# Supabase (required for comments)
-NEXT_PUBLIC_SUPABASE_URL=xxx     # Supabase project URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx # Supabase anonymous key
+# Supabase (required for comments and auth)
+NEXT_PUBLIC_SUPABASE_URL=xxx      # Supabase project URL from project settings
+NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx # Supabase anonymous key from project API settings
 ```
+
+**Important**: The app will fail-fast at runtime if Supabase env vars are missing (intentional fail-fast design).
 
 ## Database Schemas
 
@@ -131,12 +145,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx # Supabase anonymous key
 - URL state for filters and pagination
 - Realtime state with `useRealtimeComments` for live updates
 
-### Error Handling
+### Error Handling & Resilience
 
-- API routes return consistent error responses
-- Network retry logic in `src/lib/network/retry-handler.ts`
+- API routes return consistent error responses with typed error schemas
+- **Network Resilience**: `retry-handler.ts` implements circuit breaker pattern, request queue, and exponential backoff
+- **Comments Service**: Singleton pattern with built-in retry logic and fallback strategies
+- **Fail-Fast Validation**: Supabase client throws immediately if environment variables are missing
 - `ErrorBoundary` component for UI error recovery
 - Toast notifications for user feedback
+- All error paths preserve error context for debugging
 
 ### Performance Optimizations
 
@@ -190,8 +207,40 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx # Supabase anonymous key
 
 - Check `src/components/ui/` for existing components
 - Follow shadcn/ui patterns for consistency
-- Use CVA for component variants
+- Use CVA (class-variance-authority) for component variants
 - Maintain dark/light mode compatibility
+- All interactive components must use proper aria labels for accessibility
+
+### Code Patterns to Follow
+
+**Service Layer Pattern**
+```typescript
+// All services use singleton pattern with resilience
+class MyService {
+  private static instance: MyService
+  private constructor() { /* setup */ }
+  static getInstance() { /* singleton logic */ }
+}
+```
+
+**Error Handling Pattern**
+```typescript
+// Use typed errors with proper error guards
+if (!response.ok) {
+  const errorData: unknown = await response.json()
+  if (isErrorResponse(errorData)) {
+    throw new FetchError(errorData.message, response.status)
+  }
+}
+```
+
+**Type Guard Pattern**
+```typescript
+// Always use type guards instead of 'as' assertions
+function isErrorResponse(data: unknown): data is ErrorResponse {
+  return typeof data === 'object' && data !== null && 'message' in data
+}
+```
 
 ## Testing Approach
 
@@ -204,10 +253,19 @@ Currently no test suite implemented. When adding tests:
 
 ## Important Notes
 
-- Always use capital 'A' for Author property in Notion
-- Maintain TypeScript strict mode (no `any` types)
-- Follow existing import patterns (absolute imports with `@/`)
-- Preserve Linear Design System aesthetics
-- Check `docs/` folder for additional documentation
-- Handle Supabase connection errors gracefully
-- Implement optimistic updates for better UX
+- **Critical**: Always use capital 'A' for Author property in Notion (lowercase will break)
+- **Strict TypeScript**: No `any` types allowed - use proper typing or `unknown` with type guards
+- **Import Pattern**: Use absolute imports with `@/` prefix (configured in tsconfig paths)
+- **Design System**: Preserve Linear Design System aesthetics and color palette
+- **Error Handling**: All services use singleton pattern with built-in resilience (circuit breaker, retry, queue)
+- **Optimistic Updates**: Comment operations must use optimistic updates for better perceived performance
+- **Environment Variables**: Client will fail-fast if required Supabase env vars are missing
+- **Documentation**: Check `docs/` folder for implementation guides (comments, Google auth, refactoring history)
+- **Image Domains**: Only use whitelisted domains in `next.config.ts` for remote images
+- **Realtime**: Supabase Realtime subscriptions must be properly cleaned up to prevent memory leaks
+
+## Memo
+
+- 모든 task가 끝날때에는 build-checker sub agent를 이용해서 린트 체크, 타입 체크, 빌드 체크를 반드시 수행.
+- 검증이나 테스트를 위해서 서버를 실행해야 할 경우, 3000포트를 이용. 다만 이미 사용중이라면 3000포트 서비스 중지 후 사용. 그리고 마지막엔 항상 3000포트 서비스 중지.
+- npm 대신 pnpm 을 사용하세요.
