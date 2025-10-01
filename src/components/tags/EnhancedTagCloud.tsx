@@ -97,6 +97,9 @@ export function EnhancedTagCloud({ tags, className }: EnhancedTagCloudProps) {
     const width = container.clientWidth
     const height = container.clientHeight
 
+    // Cleanup flag to prevent setState after unmount
+    let isMounted = true
+
     const layout = cloud<CloudWord>()
       .size([width, height])
       .words(words)
@@ -106,10 +109,19 @@ export function EnhancedTagCloud({ tags, className }: EnhancedTagCloudProps) {
       .fontSize((d) => d.size)
       .spiral('archimedean')
       .on('end', (computedWords) => {
-        setCloudWords(computedWords as CloudWord[])
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setCloudWords(computedWords as CloudWord[])
+        }
       })
 
     layout.start()
+
+    // Cleanup: stop layout and mark as unmounted
+    return () => {
+      isMounted = false
+      layout.stop()
+    }
   }, [words, canvasStatus])
 
   const handleWordClick = (tag: Tag & { count: number }) => {

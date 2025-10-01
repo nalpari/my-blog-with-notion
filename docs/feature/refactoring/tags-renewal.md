@@ -20,7 +20,7 @@
 **구현 단계**:
 1. **차트 라이브러리 설치**
    ```bash
-   pnpm add recharts d3-cloud react-wordcloud
+   pnpm add recharts d3-cloud
    ```
 
 2. **애니메이션 라이브러리 활용**
@@ -32,9 +32,9 @@
    ```
 
 **검증 기준**:
-- [ ] 모든 패키지 정상 설치
-- [ ] 타입 정의 완료
-- [ ] 빌드 에러 없음
+- [x] 모든 패키지 정상 설치
+- [x] 타입 정의 완료
+- [x] 빌드 에러 없음
 
 ### Task 1.2: 데이터 구조 설계
 **담당**: Frontend Developer
@@ -65,26 +65,27 @@
 
 **구현 기능**:
 1. **3D Tag Cloud**
-   - react-wordcloud 활용한 인터랙티브 클라우드
-   - 크기별 색상 그라데이션
-   - 호버 시 툴팁과 확대 효과
+   - d3-cloud 라이브러리를 직접 활용한 커스텀 인터랙티브 클라우드
+   - 크기별 색상 그라데이션 (태그 카운트 기반)
+   - 호버 시 툴팁과 확대 효과 (framer-motion 활용)
    - 클릭 시 부드러운 네비게이션
+   - Canvas 지원 여부 자동 감지 및 폴백
 
 2. **애니메이션 효과**
    ```typescript
-   const tagCloudOptions = {
-     rotations: 2,
-     rotationAngles: [-90, 0],
-     fontSizes: [14, 60],
-     padding: 4,
-     spiral: 'archimedean',
-     transitionDuration: 1000
-   }
+   const layout = cloud<CloudWord>()
+     .size([width, height])
+     .words(words)
+     .padding(5)
+     .rotate(() => (Math.random() > 0.5 ? 0 : 90))
+     .fontSize((d) => d.size)
+     .spiral('archimedean')
    ```
 
 3. **반응형 디자인**
-   - 모바일: 2D 리스트 뷰 자동 전환
-   - 태블릿/데스크톱: 3D 클라우드 뷰
+   - 모바일/태블릿/데스크톱 모두 동적 워드 클라우드
+   - 컨테이너 크기에 맞춰 자동 레이아웃 조정
+   - Canvas 미지원 환경에서는 graceful degradation
 
 ### Task 2.2: 데이터 시각화 차트
 **담당**: Frontend Developer
@@ -255,16 +256,21 @@
 ## 📋 체크리스트
 
 ### 필수 구현 사항
-- [ ] 인터랙티브 태그 클라우드
-- [ ] 포스트 트렌드 차트
-- [ ] 연관 태그 표시
-- [ ] 반응형 레이아웃
-- [ ] 로딩/에러 상태 처리
+- [x] 인터랙티브 태그 클라우드 (d3-cloud 기반)
+- [x] 포스트 트렌드 차트 (Area Chart)
+- [x] 연관 태그 표시 (Radar Chart)
+- [x] 포스트 활동 히트맵
+- [x] 반응형 레이아웃 (3단 그리드)
+- [x] 로딩/에러 상태 처리
+- [x] Glassmorphism 디자인 적용
+- [x] Framer Motion 애니메이션
+- [x] 태그 통계 API 구현
+- [x] 연관 태그 API 구현
 - [ ] 성능 최적화 (Lighthouse 90+)
 - [ ] 접근성 준수 (WCAG AA)
 
 ### 선택적 개선 사항
-- [ ] 다크/라이트 모드 최적화
+- [x] 다크/라이트 모드 최적화
 - [ ] PWA 지원
 - [ ] 오프라인 지원
 - [ ] 국제화 (i18n)
@@ -293,7 +299,7 @@
 
 ### Step 1: 패키지 설치
 ```bash
-pnpm add recharts d3-cloud react-wordcloud
+pnpm add recharts d3-cloud
 pnpm add -D @types/d3-cloud
 ```
 
@@ -303,13 +309,16 @@ pnpm add -D @types/d3-cloud
 ### Step 3: 첫 번째 차트 컴포넌트 구현
 `src/components/tags/TagTrendChart.tsx` 생성하여 Recharts 기반 Area Chart 구현
 
+### Step 4: 워드 클라우드 컴포넌트 구현
+`src/components/tags/EnhancedTagCloud.tsx` 생성하여 d3-cloud 직접 활용한 커스텀 워드 클라우드 구현
+
 ---
 
 ## 📚 참고 자료
 
 ### 기술 스택
 - **차트 라이브러리**: Recharts (React 친화적, 우수한 타입 지원)
-- **워드 클라우드**: react-wordcloud (d3-cloud 기반)
+- **워드 클라우드**: d3-cloud (직접 통합, 커스텀 렌더링)
 - **애니메이션**: Framer Motion (이미 프로젝트에 포함)
 - **스타일링**: Tailwind CSS + shadcn/ui
 

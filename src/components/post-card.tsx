@@ -77,7 +77,11 @@ export function PostCard({ post, priority = false }: PostCardProps) {
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 overflow-hidden p-0 h-full">
         {/* 커버 이미지 영역 - 클릭 가능한 링크로 감싸기 */}
-        <Link href={`/posts/${post.slug}`} className="block">
+        <Link
+          href={`/posts/${post.slug}`}
+          className="block"
+          aria-label={`${post.title} 포스트 세부 보기`}
+        >
           {post.coverImage && (
             <div className="relative h-48 w-full overflow-hidden">
               <Image

@@ -68,7 +68,7 @@ export function ModernTagPage({
     )
   }
 
-  if (error) {
+  if (error && posts.length === 0) {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-7xl mx-auto">
@@ -112,6 +112,54 @@ export function ModernTagPage({
         <motion.div variants={itemVariants}>
           <TagHeroSection tag={tag} postCount={posts.length || initialPostCount} />
         </motion.div>
+
+        {error && posts.length > 0 && (
+          <motion.div
+            variants={itemVariants}
+            className="mt-6 rounded-lg border border-destructive/50 bg-destructive/10 p-4"
+          >
+            <div className="flex items-start gap-3">
+              <svg
+                className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.728-.833-2.498 0L4.316 16.5c-.77.833.192 2.5 1.732 2.5z"
+                />
+              </svg>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-destructive">
+                  추가 포스트를 불러올 수 없습니다
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">{error}</p>
+              </div>
+              <button
+                onClick={refresh}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md border border-destructive/50 text-destructive hover:bg-destructive/20 transition-colors"
+              >
+                <svg
+                  className="w-3 h-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                다시 시도
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">

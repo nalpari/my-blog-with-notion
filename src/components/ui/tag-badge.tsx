@@ -19,14 +19,14 @@ const tagColorMap: Record<string, string> = {
 
 interface TagBadgeProps {
   tag: Tag
-  size?: 'sm' | 'md'
+  size?: 'sm' | 'md' | 'lg'
   className?: string
   clickable?: boolean
 }
 
 export function TagBadge({ tag, size = 'sm', className, clickable = false }: TagBadgeProps) {
   const colorClass = tagColorMap[tag.color] || tagColorMap.default
-  const sizeClass = size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm'
+  const sizeClass = size === 'sm' ? 'px-2.5 py-1 text-xs' : size === 'md' ? 'px-3 py-1.5 text-sm' : 'px-4 py-2 text-base'
 
   const badgeContent = (
     <span
@@ -58,7 +58,7 @@ export function TagBadge({ tag, size = 'sm', className, clickable = false }: Tag
 interface TagListProps {
   tags: Tag[]
   maxTags?: number
-  size?: 'sm' | 'md'
+  size?: 'sm' | 'md' | 'lg'
   className?: string
   clickable?: boolean
 }
