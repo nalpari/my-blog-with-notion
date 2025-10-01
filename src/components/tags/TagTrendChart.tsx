@@ -27,8 +27,8 @@ interface TagTrendChartProps {
 }
 
 export function TagTrendChart({ data, className }: TagTrendChartProps) {
-  const { theme } = useTheme()
-  const isDark = theme === 'dark'
+  const { theme, resolvedTheme } = useTheme()
+  const isDark = (resolvedTheme ?? theme) === 'dark'
 
   // 테마별 색상 정의
   const colors = React.useMemo(() => ({
@@ -124,8 +124,8 @@ interface TagCorrelationChartProps {
 }
 
 export function TagCorrelationChart({ data, className }: TagCorrelationChartProps) {
-  const { theme } = useTheme()
-  const isDark = theme === 'dark'
+  const { theme, resolvedTheme } = useTheme()
+  const isDark = (resolvedTheme ?? theme) === 'dark'
 
   // 테마별 색상 정의
   const colors = React.useMemo(() => ({
@@ -213,9 +213,12 @@ export function PostDistributionHeatmap({ data, className }: PostDistributionHea
     const grouped = new Map<number, { day: string; count: number }[]>()
     
     data.forEach((item) => {
-      const date = new Date(item.date)
-      const week = Math.floor((date.getDate() - 1) / 7)
-      const dayOfWeek = date.getDay()
+      const dateUTC = new Date(item.date + 'T00:00:00Z')
+      const week = Math.floor((dateUTC.getUTCDate() - 1) / 7)
+      
+      const dayOfWeek = item.dayOfWeek !== undefined 
+        ? item.dayOfWeek 
+        : dateUTC.getUTCDay()
       
       if (!grouped.has(week)) {
         grouped.set(week, [])

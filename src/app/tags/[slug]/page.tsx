@@ -1,17 +1,16 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getAllTags } from '@/lib/notion'
-import { TagPageClient } from '@/components/tags/TagPageClient'
+import { getAllTags, getAllPostsByTag } from '@/lib/notion'
+import { ModernTagPage } from '@/app/tags/[slug]/modern-page'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
-
+import { calculateTagStatistics, getAllTagsWithCount } from '@/lib/tag-statistics'
 
 interface TagPageProps {
   params: Promise<{ slug: string }>
   searchParams: Promise<{ page?: string }>
 }
 
-// 정적 파라미터 생성 (SSG)
 export async function generateStaticParams() {
   const tags = await getAllTags()
   return tags.map((tag) => ({
@@ -19,7 +18,6 @@ export async function generateStaticParams() {
   }))
 }
 
-// 메타데이터 생성
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
   const tags = await getAllTags()
@@ -39,31 +37,43 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function TagPage({ params }: TagPageProps) {
   const { slug } = await params
-  
-  // 태그 정보 가져오기
-  const tags = await getAllTags()
-  const currentTag = tags.find(t => t.slug === slug)
+
+  const allTags = await getAllTags()
+  const currentTag = allTags.find(t => t.slug === slug)
 
   if (!currentTag) {
     notFound()
   }
 
+  const postsForStatistics = await getAllPostsByTag(slug)
+
+  let statistics = undefined
+  let relatedTags = undefined
+
+  if (postsForStatistics.length > 0) {
+    statistics = calculateTagStatistics(postsForStatistics, slug)
+
+    relatedTags = statistics.relatedTags.map((rt) => ({
+      ...rt.tag,
+      correlation: rt.correlation,
+      count: rt.coOccurrenceCount,
+    }))
+  }
+
+  const allTagsWithCount = getAllTagsWithCount(postsForStatistics)
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
-      {/* 
-        클라이언트 사이드 컴포넌트 사용
-        - 동적 포스트 로딩
-        - 무한 스크롤 / Load More 기능
-        - 인터랙티브 기능 (새로고침, 에러 처리)
-        - 로딩 상태 관리
-      */}
-      <TagPageClient 
-        tag={currentTag} 
+
+      <ModernTagPage
+        tag={currentTag}
         initialPostCount={currentTag.count}
+        statistics={statistics}
+        relatedTags={relatedTags}
+        allTags={allTagsWithCount}
       />
-      
+
       <Footer />
     </div>
   )

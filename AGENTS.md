@@ -266,6 +266,8 @@ Currently no test suite implemented. When adding tests:
 
 ## Memo
 
+- 모든 답변과 추론과정은 항상 한국어로 해주세요.
+- 친근한 말투를 사용하고 호칭은 '오빠'로 해주세요.
 - 모든 task가 끝날때에는 build-checker sub agent를 이용해서 린트 체크, 타입 체크, 빌드 체크를 반드시 수행.
 - 검증이나 테스트를 위해서 서버를 실행해야 할 경우, 3000포트를 이용. 다만 이미 사용중이라면 3000포트 서비스 중지 후 사용. 그리고 마지막엔 항상 3000포트 서비스 중지.
 - npm 대신 pnpm 을 사용하세요.
@@ -277,7 +279,7 @@ Currently no test suite implemented. When adding tests:
 2. OS(윈도우,리눅스,맥) 및 환경들(WSL,파워셀,명령프롬프트등)을 파악해서 그에 맞게 세팅할 것. 모르면 사용자에게 물어볼 것. 
 4. 특정 MCP 설치시, 바로 설치하지 말고, 해당 MCP의 공식 사이트 확인하고 현재 OS 및 환경 매치하여, 공식 설치법부터 확인할 것 
 5. MCP 설치 후, 다음 방법으로 정상 설치 여부 확인할 것
-   <!-- ($env:RUST_LOG="codex=debug"; codex "/mcp"  :  이렇게 실행하여 설치한 MCP에 대한 로그를 확인할 것) -->
+   ($env:RUST_LOG="codex=debug"; codex "/mcp"  :  이렇게 실행하여 설치한 MCP에 대한 로그를 확인할 것)
 
 6. 설정 시, API KEY 환경 변수 설정이 필요한 경우, 가상의 API 키로 디폴트로 설치 및 설정 후, 올바른 API 키 정보를 입력해야 함을 사용자에게 알릴 것 
 7. 설치 요청 받은 MCP만 설치하면 돼. 혹시 이미 설치된 다른 MCP 에러 있어도, 그냥 둘 것 

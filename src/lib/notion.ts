@@ -494,6 +494,32 @@ export async function getPostsByTag(
 }
 
 /**
+ * 지정한 태그의 모든 포스트를 페이지네이션 없이 한 번에 가져오기
+ * 통계 산출 시 충분한 표본을 확보하기 위해 사용
+ */
+export async function getAllPostsByTag(tagSlug: string): Promise<Post[]> {
+  const allPosts: Post[] = []
+  let cursor: string | undefined = undefined
+
+  while (true) {
+    const { posts, nextCursor, hasMore } = await getPostsByTag(tagSlug, 100, cursor)
+
+    allPosts.push(...posts)
+
+    if (!hasMore || !nextCursor) {
+      if (hasMore && !nextCursor) {
+        console.warn(`⚠️ Missing nextCursor for tag "${tagSlug}" despite hasMore=true. Stopping pagination to avoid infinite loop.`)
+      }
+      break
+    }
+
+    cursor = nextCursor
+  }
+
+  return allPosts
+}
+
+/**
  * 태그 이름을 정규화하는 함수
  */
 function normalizeTagName(name: string): string {
