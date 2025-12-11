@@ -1,19 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronUp } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ArrowUp } from 'lucide-react'
 
 /**
- * 스크롤 투 탑 플로팅 버튼 컴포넌트
- * 스크롤이 일정 높이 이상 내려갔을 때 나타나며, 클릭 시 페이지 상단으로 부드럽게 이동
+ * Neo-Futurism Scroll-to-Top Button
+ * Floating button with neon glow effects
  */
 export const ScrollToTopButton = () => {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
     const toggleVisibility = () => {
-      // 스크롤이 300px 이상 내려갔을 때 버튼 표시
       if (window.pageYOffset > 300) {
         setIsVisible(true)
       } else {
@@ -21,10 +19,8 @@ export const ScrollToTopButton = () => {
       }
     }
 
-    // 스크롤 이벤트 리스너 추가
     window.addEventListener('scroll', toggleVisibility)
 
-    // 컴포넌트 언마운트 시 이벤트 리스너 제거
     return () => {
       window.removeEventListener('scroll', toggleVisibility)
     }
@@ -44,23 +40,38 @@ export const ScrollToTopButton = () => {
     }
   }
 
-  if (!isVisible) {
-    return null
-  }
-
   return (
-    <Button
+    <button
       onClick={handleScrollToTop}
       onKeyDown={handleKeyDown}
-      className={
-        'fixed bottom-8 right-8 z-50 h-12 w-12 rounded-full bg-zinc-800 text-white shadow-lg transition-all duration-300 hover:bg-zinc-700 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 dark:bg-zinc-700 dark:hover:bg-zinc-600'
-      }
-      size="icon"
+      className={`
+        fixed bottom-8 right-8 z-50
+        h-12 w-12 rounded-xl
+        glass-card
+        flex items-center justify-center
+        transition-all duration-500
+        group
+        ${isVisible
+          ? 'opacity-100 translate-y-0'
+          : 'opacity-0 translate-y-4 pointer-events-none'
+        }
+      `}
       aria-label="페이지 상단으로 이동"
-      tabIndex={0}
+      tabIndex={isVisible ? 0 : -1}
     >
-      <ChevronUp className="h-5 w-5" />
-    </Button>
+      {/* Gradient border effect */}
+      <div className="absolute inset-0 rounded-xl p-px bg-gradient-to-br from-[#00f5ff]/50 via-transparent to-[#a855f7]/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="h-full w-full rounded-[11px] bg-[#0a0a0f]" />
+      </div>
+
+      {/* Glow effect on hover */}
+      <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute inset-0 bg-[#00f5ff] blur-lg opacity-20" />
+      </div>
+
+      {/* Icon */}
+      <ArrowUp className="relative h-5 w-5 text-muted-foreground group-hover:text-[#00f5ff] transition-colors duration-300" />
+    </button>
   )
 }
 

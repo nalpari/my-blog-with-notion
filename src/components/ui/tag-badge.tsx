@@ -3,18 +3,68 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { Tag } from '@/types/notion'
 
-// 태그 색상 매핑 - 더 세련된 색상으로 업데이트
-const tagColorMap: Record<string, string> = {
-  default: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700',
-  gray: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700',
-  brown: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/70',
-  orange: 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900/70',
-  yellow: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/70',
-  green: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/70',
-  blue: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/70',
-  purple: 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/70',
-  pink: 'bg-pink-100 text-pink-700 dark:bg-pink-900/50 dark:text-pink-300 hover:bg-pink-200 dark:hover:bg-pink-900/70',
-  red: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/70',
+// Neo-Futurism tag color mapping with neon effects
+const tagColorMap: Record<string, { bg: string; text: string; border: string; glow: string }> = {
+  default: {
+    bg: 'bg-[#00f5ff]/10',
+    text: 'text-[#00f5ff]',
+    border: 'border-[#00f5ff]/30',
+    glow: 'hover:shadow-[0_0_10px_rgba(0,245,255,0.3)]',
+  },
+  gray: {
+    bg: 'bg-[#8888aa]/10',
+    text: 'text-[#8888aa]',
+    border: 'border-[#8888aa]/30',
+    glow: 'hover:shadow-[0_0_10px_rgba(136,136,170,0.3)]',
+  },
+  brown: {
+    bg: 'bg-[#ff8800]/10',
+    text: 'text-[#ff8800]',
+    border: 'border-[#ff8800]/30',
+    glow: 'hover:shadow-[0_0_10px_rgba(255,136,0,0.3)]',
+  },
+  orange: {
+    bg: 'bg-[#ff8800]/10',
+    text: 'text-[#ff8800]',
+    border: 'border-[#ff8800]/30',
+    glow: 'hover:shadow-[0_0_10px_rgba(255,136,0,0.3)]',
+  },
+  yellow: {
+    bg: 'bg-[#ffd700]/10',
+    text: 'text-[#ffd700]',
+    border: 'border-[#ffd700]/30',
+    glow: 'hover:shadow-[0_0_10px_rgba(255,215,0,0.3)]',
+  },
+  green: {
+    bg: 'bg-[#00ff88]/10',
+    text: 'text-[#00ff88]',
+    border: 'border-[#00ff88]/30',
+    glow: 'hover:shadow-[0_0_10px_rgba(0,255,136,0.3)]',
+  },
+  blue: {
+    bg: 'bg-[#3b82f6]/10',
+    text: 'text-[#3b82f6]',
+    border: 'border-[#3b82f6]/30',
+    glow: 'hover:shadow-[0_0_10px_rgba(59,130,246,0.3)]',
+  },
+  purple: {
+    bg: 'bg-[#a855f7]/10',
+    text: 'text-[#a855f7]',
+    border: 'border-[#a855f7]/30',
+    glow: 'hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]',
+  },
+  pink: {
+    bg: 'bg-[#ff6b9d]/10',
+    text: 'text-[#ff6b9d]',
+    border: 'border-[#ff6b9d]/30',
+    glow: 'hover:shadow-[0_0_10px_rgba(255,107,157,0.3)]',
+  },
+  red: {
+    bg: 'bg-[#ff4757]/10',
+    text: 'text-[#ff4757]',
+    border: 'border-[#ff4757]/30',
+    glow: 'hover:shadow-[0_0_10px_rgba(255,71,87,0.3)]',
+  },
 }
 
 interface TagBadgeProps {
@@ -25,21 +75,31 @@ interface TagBadgeProps {
 }
 
 export function TagBadge({ tag, size = 'sm', className, clickable = false }: TagBadgeProps) {
-  const colorClass = tagColorMap[tag.color] || tagColorMap.default
-  const sizeClass = size === 'sm' ? 'px-2.5 py-1 text-xs' : size === 'md' ? 'px-3 py-1.5 text-sm' : 'px-4 py-2 text-base'
+  const colors = tagColorMap[tag.color] || tagColorMap.default
+  const sizeClass =
+    size === 'sm' ? 'px-2.5 py-1 text-xs' :
+    size === 'md' ? 'px-3 py-1.5 text-sm' :
+    'px-4 py-2 text-base'
 
   const badgeContent = (
     <span
       className={cn(
-        'inline-flex items-center rounded-full font-medium transition-all duration-200 select-none',
-        'border border-transparent',
-        clickable ? 'cursor-pointer hover:scale-105' : 'cursor-default',
-        colorClass,
+        'inline-flex items-center rounded-lg font-medium transition-all duration-300 select-none',
+        'border backdrop-blur-sm',
+        colors.bg,
+        colors.text,
+        colors.border,
+        clickable && [
+          'cursor-pointer hover:scale-105',
+          colors.glow,
+        ],
+        !clickable && 'cursor-default',
         sizeClass,
         className,
       )}
       title={tag.name}
     >
+      <span className="w-1.5 h-1.5 rounded-full mr-1.5 opacity-80" style={{ backgroundColor: 'currentColor' }} />
       {tag.name}
     </span>
   )
@@ -70,16 +130,18 @@ export function TagList({ tags, maxTags = 3, size = 'sm', className, clickable =
   const remainingCount = tags.length - maxTags
 
   return (
-    <div className={cn('flex flex-wrap gap-1.5 items-center', className)}>
+    <div className={cn('flex flex-wrap gap-2 items-center', className)}>
       {displayTags.map((tag) => (
         <TagBadge key={tag.id} tag={tag} size={size} clickable={clickable} />
       ))}
       {remainingCount > 0 && (
         <span
           className={cn(
-            'inline-flex items-center rounded-full bg-muted/80 text-muted-foreground font-medium',
-            'border border-border/50 transition-colors duration-200',
-            'hover:bg-muted hover:text-foreground',
+            'inline-flex items-center rounded-lg font-medium',
+            'bg-[rgba(255,255,255,0.05)] text-muted-foreground',
+            'border border-[rgba(255,255,255,0.1)]',
+            'transition-all duration-300',
+            'hover:bg-[rgba(255,255,255,0.1)] hover:text-foreground',
             size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm',
           )}
           title={`${remainingCount}개의 추가 태그`}
