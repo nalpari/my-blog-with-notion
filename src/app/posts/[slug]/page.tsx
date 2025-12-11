@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import Image from 'next/image'
 import { getPostBySlug, getPostBlocks, getPublishedPosts } from '@/lib/notion'
 import { Metadata } from 'next'
@@ -13,7 +14,7 @@ import { CommentsSection } from '@/components/comments/CommentsSection'
 
 import { POSTS_CONFIG } from '@/config/constants'
 import { MESSAGES } from '@/config/messages'
-import { calculateWordCount, calculateReadingTimeFromText } from '@/lib/word-count'
+import { calculateReadingTimeFromText } from '@/lib/word-count'
 
 interface PostPageProps {
   params: Promise<{
@@ -57,94 +58,99 @@ export default async function PostPage({ params }: PostPageProps) {
 
   // 포스트 콘텐츠 가져오기
   const content = await getPostBlocks(post.id)
-  
+
   // 실제 content 기반으로 읽기 시간과 단어 수 계산
-  const wordCount = content ? calculateWordCount(content) : POSTS_CONFIG.DEFAULT_WORD_COUNT
+  // const wordCount = content ? calculateWordCount(content) : POSTS_CONFIG.DEFAULT_WORD_COUNT
   const readingTime = content ? calculateReadingTimeFromText(content) : post.readingTime
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       <Header />
-      <div className="container mx-auto mt-16 lg:mt-32 xl:relative px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto mt-20 lg:mt-32 xl:relative px-4 sm:px-6 lg:px-8 max-w-4xl">
         <article>
-          <header className="flex flex-col">
-            {/* 작성자 정보와 메타 정보 */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-              {/* Author 정보 */}
-              <div className="flex items-center gap-3">
+          <header className="flex flex-col space-y-8 border-b border-border pb-8">
+            {/* Back Link */}
+            <Link href="/posts" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 w-fit group">
+              <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Posts
+            </Link>
+
+            {/* Title */}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-balance leading-tight">
+              {post.title}
+            </h1>
+
+            {/* Author & Meta */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
                 {post.author?.avatar ? (
                   <Image
                     src={post.author.avatar}
                     alt={post.author.name || 'Author'}
-                    width={40}
-                    height={40}
-                    className="rounded-full"
+                    width={48}
+                    height={48}
+                    className="rounded-full ring-2 ring-background"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center">
-                    <span className="text-zinc-400 font-medium">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center ring-2 ring-background">
+                    <span className="text-muted-foreground font-semibold">
                       {(post.author?.name || POSTS_CONFIG.DEFAULT_AUTHOR).charAt(0).toUpperCase()}
                     </span>
                   </div>
                 )}
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-zinc-200">
+                <div>
+                  <div className="font-semibold text-foreground">
                     {post.author?.name || POSTS_CONFIG.DEFAULT_AUTHOR}
-                  </span>
+                  </div>
                   {post.author?.email && (
-                    <span className="text-xs text-zinc-500">{post.author.email}</span>
+                    <div className="text-sm text-muted-foreground">{post.author.email}</div>
                   )}
                 </div>
               </div>
-              
-              {/* 구분선 */}
-              <div className="hidden sm:block w-px h-8 bg-zinc-700"></div>
-              
-              {/* 메타 정보 */}
-              <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-400 dark:text-zinc-500">
-                <time dateTime={post.publishedAt}>
+
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                <time dateTime={post.publishedAt} className="flex items-center gap-1.5">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   {new Date(post.publishedAt).toLocaleDateString('ko-KR', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
                   })}
                 </time>
-                <span>•</span>
-                <span>{readingTime}{MESSAGES.READING_TIME}</span>
-                <span>•</span>
-                <span>{wordCount.toLocaleString()} {MESSAGES.WORD_COUNT}</span>
+                <span className="hidden sm:inline">•</span>
+                <span className="flex items-center gap-1.5">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  {readingTime}{MESSAGES.READING_TIME}
+                </span>
               </div>
             </div>
 
-            {/* 제목 - 더 크게 */}
-            <h1 className="mt-6 text-5xl font-bold tracking-tight text-zinc-100 dark:text-zinc-100 sm:text-6xl leading-tight">
-              {post.title}
-            </h1>
-
-            {/* 카테고리 태그들 - 어두운 배경 */}
-            {(post.category || (post.tags && post.tags.length > 0)) && (
-              <div className="mt-6 flex flex-wrap gap-3">
-                {post.category && (
-                  <span className="bg-zinc-800 text-white px-4 py-2 rounded text-sm font-medium">
-                    {post.category.name}
-                  </span>
-                )}
-                {post.tags &&
-                  post.tags.length > 0 &&
-                  post.tags.map((tag) => (
-                    <span
-                      key={tag.id}
-                      className="bg-transparent border border-zinc-600 text-zinc-300 px-4 py-2 rounded text-sm font-medium"
-                    >
-                      {tag.name}
-                    </span>
-                  ))}
-              </div>
-            )}
+            {/* Categories & Tags */}
+            <div className="flex flex-wrap gap-2">
+              {post.category && (
+                <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
+                  {post.category.name}
+                </span>
+              )}
+              {post.tags?.map((tag) => (
+                <span
+                  key={tag.id}
+                  className="bg-muted text-muted-foreground px-3 py-1 rounded-full text-sm hover:bg-muted/80 transition-colors"
+                >
+                  #{tag.name}
+                </span>
+              ))}
+            </div>
           </header>
 
           <div
-            className="mt-8 pb-[100px] prose prose-sm prose-zinc dark:prose-invert max-w-none text-zinc-600 dark:text-zinc-300 leading-7"
+            className="mt-12 pb-24 prose prose-lg prose-neutral dark:prose-invert max-w-none text-foreground/90 leading-loose
+            prose-headings:font-bold prose-headings:tracking-tight
+            prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+            prose-code:text-primary prose-code:bg-muted/50 prose-code:px-1 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
+            prose-img:rounded-xl prose-img:shadow-lg"
             data-mdx-content
           >
             <ReactMarkdown
@@ -159,100 +165,59 @@ export default async function PostPage({ params }: PostPageProps) {
                       style={oneDark}
                       language={match[1]}
                       PreTag="div"
-                      className="rounded-lg"
+                      className="rounded-xl my-6 shadow-sm !bg-[#1e1e1e] !p-6"
                     >
                       {String(children).replace(/\n$/, '')}
                     </SyntaxHighlighter>
                   ) : (
-                    <code className={className}>{children}</code>
+                    <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-sm">{children}</code>
                   )
                 },
-                h1: ({ children }) => (
-                  <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-8 mb-4">
-                    {children}
-                  </h1>
+                img: ({ src, alt }) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={src || ''}
+                    alt={alt || ''}
+                    className="w-full h-auto rounded-xl shadow-md my-8 border border-border/50"
+                    loading="lazy"
+                  />
                 ),
-                h2: ({ children }) => (
-                  <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mt-6 mb-3">
-                    {children}
-                  </h2>
-                ),
-                h3: ({ children }) => (
-                  <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100 mt-4 mb-2">
-                    {children}
-                  </h3>
-                ),
-                p: ({ children }) => (
-                  <p className="mb-4 text-zinc-600 dark:text-zinc-300 leading-7">
-                    {children}
-                  </p>
-                ),
-                ul: ({ children }) => (
-                  <ul className="list-disc list-inside mb-4 text-zinc-600 dark:text-zinc-300">
-                    {children}
-                  </ul>
-                ),
-                ol: ({ children }) => (
-                  <ol className="list-decimal list-inside mb-4 text-zinc-600 dark:text-zinc-300">
-                    {children}
-                  </ol>
-                ),
-                li: ({ children }) => <li className="mb-1">{children}</li>,
                 blockquote: ({ children }) => (
-                  <blockquote className="border-l-4 border-accent pl-4 italic text-zinc-500 dark:text-zinc-400 my-4">
+                  <blockquote className="border-l-4 border-primary pl-6 italic text-muted-foreground my-8 bg-muted/20 p-4 rounded-r-lg">
                     {children}
                   </blockquote>
                 ),
-                a: ({ href, children }) => (
-                  <a
-                    href={href}
-                    className="text-accent hover:text-accent/80 underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {children}
-                  </a>
-                ),
                 table: ({ children }) => (
-                  <div className="overflow-x-auto mb-6 rounded-lg border border-zinc-200 dark:border-zinc-700 shadow-sm">
-                    <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
+                  <div className="overflow-x-auto my-8 rounded-lg border border-border shadow-sm">
+                    <table className="min-w-full divide-y divide-border">
                       {children}
                     </table>
                   </div>
                 ),
                 thead: ({ children }) => (
-                  <thead className="bg-zinc-50 dark:bg-zinc-800/50">
+                  <thead className="bg-muted/50">
                     {children}
                   </thead>
                 ),
                 tbody: ({ children }) => (
-                  <tbody className="bg-white dark:bg-zinc-900 divide-y divide-zinc-200 dark:divide-zinc-700">
+                  <tbody className="bg-background divide-y divide-border">
                     {children}
                   </tbody>
                 ),
                 tr: ({ children }) => (
-                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors">
+                  <tr className="hover:bg-muted/20 transition-colors">
                     {children}
                   </tr>
                 ),
                 th: ({ children }) => (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     {children}
                   </th>
                 ),
                 td: ({ children }) => (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
                     {children}
                   </td>
-                ),
-                img: ({ src, alt }) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={typeof src === 'string' ? src : ''}
-                    alt={alt || ''}
-                    className="w-full h-auto max-w-full rounded-lg my-6 object-cover"
-                    loading="lazy"
-                  />
                 ),
               }}
             >
@@ -260,7 +225,6 @@ export default async function PostPage({ params }: PostPageProps) {
             </ReactMarkdown>
           </div>
 
-          {/* Comments Section */}
           <CommentsSection postSlug={slug} />
         </article>
       </div>

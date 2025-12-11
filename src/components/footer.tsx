@@ -1,37 +1,42 @@
-import { Button } from '@/components/ui/button'
+/**
+ * @fileoverview Footer Component
+ */
 
-const Footer = () => {
+import Link from "next/link"
+
+export function Footer() {
   return (
-    <footer className="pt-[62px] pb-12 sm:pt-[66px] sm:pb-16 lg:pt-[70px] lg:pb-20 border-t border-border/40">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center">
-              <span className="text-accent-foreground font-bold text-sm">
-                B
-              </span>
-            </div>
-            <span className="font-semibold text-lg">Blog</span>
+    <footer className="border-t border-border/40 bg-background/50 backdrop-blur-sm mt-auto">
+      <div className="container mx-auto px-4 py-8 md:py-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Blog</h3>
+            <p className="text-sm text-user-select-none text-muted-foreground leading-relaxed">
+              Sharing insights on web development, design systems, and modern tech stacks.
+            </p>
           </div>
-          <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-            모던한 웹 개발에 대한 인사이트를 공유하는 개발자 블로그입니다.
-          </p>
-          <div className="flex justify-center space-x-4">
-            <Button variant="ghost" size="sm">
-              GitHub
-            </Button>
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Links</h3>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link href="/" className="hover:text-foreground transition-colors">Home</Link></li>
+              <li><Link href="/posts" className="hover:text-foreground transition-colors">Posts</Link></li>
+              <li><Link href="/tags" className="hover:text-foreground transition-colors">Tags</Link></li>
+            </ul>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Connect</h3>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">GitHub</a></li>
+              <li><a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">Twitter</a></li>
+              <li><a href="mailto:hello@example.com" className="hover:text-foreground transition-colors">Email</a></li>
+            </ul>
           </div>
         </div>
-
-        <div className="border-t border-border/40 mt-8 pt-8 text-center text-sm text-muted-foreground">
-          <p>
-            © 2024 Blog. Linear Design System을 기반으로 Claude Code를 이용한
-            vibe coding으로 제작되었습니다.
-          </p>
+        <div className="pt-8 border-t border-border/40 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
+          <p>© {new Date().getFullYear()} My Blog. All rights reserved.</p>
+          <p>Powered by Next.js & Notion</p>
         </div>
       </div>
     </footer>
   )
 }
-
-export { Footer }
