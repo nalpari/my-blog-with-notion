@@ -16,7 +16,7 @@ import type { Post } from '@/types/notion'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { PostCard } from '@/components/post-card'
-import { Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Filter, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { POSTS_CONFIG } from '@/config/constants'
 
 // 로딩 컴포넌트
@@ -24,25 +24,15 @@ function PostsLoading() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {[1, 2, 3, 4, 5, 6].map((i) => (
-        <Card key={i} className="overflow-hidden p-0">
-          <div className="relative h-48 w-full bg-muted animate-pulse" />
-          <CardHeader className="p-6 pb-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-4 w-20 bg-muted animate-pulse rounded" />
-              <span>•</span>
-              <div className="h-6 w-16 bg-muted animate-pulse rounded" />
-            </div>
-            <div className="h-6 w-full bg-muted animate-pulse rounded mb-2" />
-            <div className="h-4 w-full bg-muted animate-pulse rounded" />
-            <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
-          </CardHeader>
-          <CardContent className="px-6 pb-6">
-            <div className="flex items-center justify-between">
-              <div className="h-4 w-16 bg-muted animate-pulse rounded" />
-              <div className="h-8 w-16 bg-muted animate-pulse rounded" />
-            </div>
-          </CardContent>
-        </Card>
+        <div key={i} className="border border-border/40 rounded-lg overflow-hidden bg-card/40">
+          <div className="aspect-[16/9] bg-muted/50 animate-pulse" />
+          <div className="p-6 space-y-4">
+            <div className="h-4 w-24 bg-muted/50 animate-pulse rounded" />
+            <div className="h-6 w-3/4 bg-muted/50 animate-pulse rounded" />
+            <div className="h-4 w-full bg-muted/50 animate-pulse rounded" />
+            <div className="h-4 w-2/3 bg-muted/50 animate-pulse rounded" />
+          </div>
+        </div>
       ))}
     </div>
   )
@@ -86,39 +76,39 @@ function Pagination({
   if (totalPages <= 1) return null
 
   return (
-    <div className="flex items-center justify-center gap-2 mt-12">
+    <div className="flex items-center justify-center gap-2 mt-16">
       <Button
-        variant="outline"
+        variant="ghost"
         size="sm"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={hasPrevious !== undefined ? !hasPrevious : currentPage === 1}
-        className="gap-1"
+        className="h-8 w-8 p-0"
       >
         <ChevronLeft className="h-4 w-4" />
-        이전
+        <span className="sr-only">이전 페이지</span>
       </Button>
 
       {getPageNumbers().map((page) => (
         <Button
           key={page}
-          variant={currentPage === page ? 'default' : 'outline'}
+          variant={currentPage === page ? 'secondary' : 'ghost'}
           size="sm"
           onClick={() => onPageChange(page)}
-          className="min-w-[40px]"
+          className={`h-8 w-8 p-0 text-sm font-medium ${currentPage === page ? 'bg-secondary text-secondary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
         >
           {page}
         </Button>
       ))}
 
       <Button
-        variant="outline"
+        variant="ghost"
         size="sm"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={hasNext !== undefined ? !hasNext : currentPage === totalPages}
-        className="gap-1"
+        className="h-8 w-8 p-0"
       >
-        다음
         <ChevronRight className="h-4 w-4" />
+        <span className="sr-only">다음 페이지</span>
       </Button>
     </div>
   )
@@ -141,54 +131,47 @@ interface ApiResponse {
   error?: string
 }
 
-// 캐시 키 생성 함수
 const getCacheKey = (page: number, search: string, category: string) => {
   return `posts_cache_${page}_${search}_${category}`
 }
 
-// 커서 캐시 키 생성 함수  
 const getCursorCacheKey = (search: string, category: string) => {
   return `cursor_map_${search}_${category}`
 }
 
-// sessionStorage에서 캐시된 데이터 가져오기
 const getCachedData = (key: string) => {
   try {
     const cached = sessionStorage.getItem(key)
     if (cached) {
       const data = JSON.parse(cached)
-      // 캐시 유효 시간: 5분
       if (Date.now() - data.timestamp < 5 * 60 * 1000) {
         return data
       }
       sessionStorage.removeItem(key)
     }
   } catch {
-    // 캐시 읽기 실패 시 무시
+    // Ignore
   }
   return null
 }
 
-// 커서 매핑 정보 가져오기
 const getCursorMap = (search: string, category: string): Map<number, string> => {
   try {
     const key = getCursorCacheKey(search, category)
     const cached = sessionStorage.getItem(key)
     if (cached) {
       const data = JSON.parse(cached)
-      // 캐시 유효 시간: 10분 (API와 동일)
       if (Date.now() - data.timestamp < 10 * 60 * 1000) {
         return new Map(data.cursors)
       }
       sessionStorage.removeItem(key)
     }
   } catch {
-    // 캐시 읽기 실패 시 무시
+    // Ignore
   }
   return new Map()
 }
 
-// 커서 매핑 정보 저장
 const saveCursorMap = (search: string, category: string, cursorMap: Map<number, string>) => {
   try {
     const key = getCursorCacheKey(search, category)
@@ -200,11 +183,10 @@ const saveCursorMap = (search: string, category: string, cursorMap: Map<number, 
       }),
     )
   } catch {
-    // 캐시 저장 실패 시 무시
+    // Ignore
   }
 }
 
-// sessionStorage에 데이터 캐싱
 const setCachedData = (
   key: string,
   posts: Post[],
@@ -220,12 +202,11 @@ const setCachedData = (
       }),
     )
   } catch {
-    // 캐시 저장 실패 시 무시 (용량 초과 등)
+    // Ignore
   }
 }
 
 export function PostsListPage() {
-  // URL 파라미터에서 초기값 복원
   const getInitialState = () => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
@@ -268,7 +249,6 @@ export function PostsListPage() {
   const postsPerPage = POSTS_CONFIG.POSTS_PER_PAGE
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  // Fetch posts with query parameters
   const fetchPosts = useCallback(
     async (
       page: number = 1,
@@ -276,7 +256,6 @@ export function PostsListPage() {
       category: string = 'all',
       useCache: boolean = true,
     ) => {
-      // 캐시 확인
       const cacheKey = getCacheKey(page, search, category)
       if (useCache) {
         const cached = getCachedData(cacheKey)
@@ -288,16 +267,13 @@ export function PostsListPage() {
         }
       }
 
-      // 이전 요청이 있으면 취소
       if (abortControllerRef.current) {
         abortControllerRef.current.abort()
       }
 
-      // 새로운 AbortController 생성
       const controller = new AbortController()
       abortControllerRef.current = controller
 
-      // 캐시가 없을 때만 로딩 표시
       if (!useCache || !getCachedData(cacheKey)) {
         setLoading(true)
       }
@@ -311,7 +287,6 @@ export function PostsListPage() {
           ...(category !== 'all' && { category }),
         })
 
-        // URL 파라미터 업데이트 (브라우저 히스토리에 저장)
         if (typeof window !== 'undefined') {
           const url = new URL(window.location.href)
           url.searchParams.set('page', page.toString())
@@ -334,26 +309,21 @@ export function PostsListPage() {
 
         const data: ApiResponse = await response.json()
 
-        // 요청이 취소되지 않았을 때만 상태 업데이트
         if (!controller.signal.aborted) {
           setPosts(data.posts)
           setPagination(data.pagination)
           setError(null)
-          
-          // 커서 정보 업데이트
+
           if (data.pagination.nextCursor && page > 0) {
             const newCursorMap = getCursorMap(search, category)
-            // 다음 페이지를 위한 커서 저장
             newCursorMap.set(page + 1, data.pagination.nextCursor)
             setCursorMap(newCursorMap)
             saveCursorMap(search, category, newCursorMap)
           }
-          
-          // 데이터 캐싱
+
           setCachedData(cacheKey, data.posts, data.pagination)
         }
       } catch (error) {
-        // AbortError는 무시
         if (error instanceof Error && error.name === 'AbortError') {
           return
         }
@@ -386,13 +356,11 @@ export function PostsListPage() {
     [postsPerPage],
   )
 
-  // 카테고리 로드 (한 번만)
   useEffect(() => {
     const controller = new AbortController()
 
     const loadCategories = async () => {
       try {
-        // 캐시된 카테고리 확인
         const cachedCategories = sessionStorage.getItem('categories_cache')
         if (cachedCategories) {
           setAllCategories(JSON.parse(cachedCategories))
@@ -412,7 +380,6 @@ export function PostsListPage() {
             ),
           ) as string[]
           setAllCategories(uniqueCategories)
-          // 카테고리 캐싱
           sessionStorage.setItem(
             'categories_cache',
             JSON.stringify(uniqueCategories),
@@ -433,22 +400,17 @@ export function PostsListPage() {
     }
   }, [])
 
-  // 초기 로드 및 상태 변경 시 데이터 페칭
   useEffect(() => {
     if (isInitialMount) {
-      // 초기 마운트 시 캐시 사용
       fetchPosts(currentPage, searchTerm, selectedCategory, true)
       setIsInitialMount(false)
     } else {
-      // 상태 변경 시 새 데이터 로드
       fetchPosts(currentPage, searchTerm, selectedCategory, false)
     }
   }, [currentPage, searchTerm, selectedCategory, fetchPosts, isInitialMount])
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      // 컴포넌트 언마운트 시 진행 중인 요청 취소
       if (abortControllerRef.current) {
         abortControllerRef.current.abort()
       }
@@ -463,186 +425,118 @@ export function PostsListPage() {
   const handleSearchChange = (value: string) => {
     setSearchTerm(value)
     setCurrentPage(1)
-    // 검색어 변경 시 커서 맵 초기화
     setCursorMap(new Map())
   }
 
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value)
     setCurrentPage(1)
-    // 카테고리 변경 시 커서 맵 초기화
     setCursorMap(new Map())
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <section className="py-12 sm:py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {/* 헤더 */}
-          <div className="mb-8 sm:mb-12">
-            <h1 className="text-3xl sm:text-4xl font-bold mb-4">모든 포스트</h1>
-            <p className="text-muted-foreground text-base sm:text-lg">
-              개발과 기술에 대한 모든 인사이트를 확인해보세요
+      <main className="flex-1">
+        <div className="py-20 sm:py-24 border-b border-border/40">
+          <div className="container mx-auto px-6">
+            <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight mb-6">Blog</h1>
+            <p className="text-lg text-muted-foreground max-w-2xl">
+              최신 기술 트렌드와 개발 경험을 공유합니다.
             </p>
           </div>
-
-          {/* 검색 및 필터 */}
-          <div className="mb-8 flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                type="text"
-                placeholder="포스트 제목이나 내용으로 검색..."
-                value={searchTerm}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select
-                value={selectedCategory}
-                onValueChange={handleCategoryChange}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="카테고리 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 카테고리</SelectItem>
-                  {allCategories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* 결과 카운트 */}
-          {!loading && (
-            <div className="mb-6">
-              <p className="text-sm text-muted-foreground">
-                총 {pagination.totalPosts}개의 포스트
-                {searchTerm && (
-                  <span> (&apos;{searchTerm}&apos; 검색 결과)</span>
-                )}
-              </p>
-            </div>
-          )}
-
-          {/* 에러 메시지 표시 */}
-          {error && (
-            <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-              <p className="text-destructive font-medium">
-                오류가 발생했습니다
-              </p>
-              <p className="text-sm text-destructive/80 mt-1">{error}</p>
-            </div>
-          )}
-
-          {/* 포스트 목록 */}
-          {loading ? (
-            <PostsLoading />
-          ) : error ? (
-            <div className="text-center py-12">
-              <div className="text-muted-foreground mb-4">
-                <svg
-                  className="w-16 h-16 mx-auto mb-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">
-                포스트를 불러올 수 없습니다
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                잠시 후 다시 시도해주세요.
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setError(null)
-                  fetchPosts(currentPage, searchTerm, selectedCategory)
-                }}
-              >
-                다시 시도
-              </Button>
-            </div>
-          ) : posts.length > 0 ? (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {posts.map((post, index) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    priority={index === 0 && currentPage === 1}
-                  />
-                ))}
-              </div>
-              <Pagination
-                currentPage={currentPage}
-                totalPages={pagination.totalPages}
-                onPageChange={handlePageChange}
-                hasNext={pagination.hasNext}
-                hasPrevious={pagination.hasPrevious}
-              />
-            </>
-          ) : (
-            <div className="text-center py-12">
-              <div className="text-muted-foreground mb-4">
-                <svg
-                  className="w-16 h-16 mx-auto mb-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              {searchTerm || selectedCategory !== 'all' ? (
-                <>
-                  <h3 className="text-lg font-semibold mb-2">
-                    검색 결과가 없습니다
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    다른 검색어나 카테고리를 시도해보세요.
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSearchTerm('')
-                      setSelectedCategory('all')
-                    }}
-                  >
-                    필터 초기화
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <h3 className="text-lg font-semibold mb-2">
-                    아직 게시된 포스트가 없습니다
-                  </h3>
-                  <p className="text-muted-foreground">
-                    곧 흥미로운 포스트들을 만나보실 수 있습니다.
-                  </p>
-                </>
-              )}
-            </div>
-          )}
         </div>
-      </section>
+
+        <section className="py-12">
+          <div className="container mx-auto px-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="포스트 검색..."
+                  value={searchTerm}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-10 h-10 border-border/60 bg-background/50 focus:bg-background transition-colors"
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+                  <SelectTrigger className="w-[160px] h-10 border-border/60 bg-background/50">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Filter className="w-4 h-4" />
+                      <span className="text-foreground">{selectedCategory === 'all' ? '모든 카테고리' : selectedCategory}</span>
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">모든 카테고리</SelectItem>
+                    {allCategories.map((category) => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Count Badge */}
+                {!loading && (
+                  <div className="hidden sm:flex items-center px-3 h-10 rounded-md border border-border/40 bg-muted/20 text-sm text-muted-foreground">
+                    {pagination.totalPosts} posts
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {error && (
+              <div className="mb-8 p-4 bg-destructive/5 border border-destructive/20 rounded-lg flex items-center gap-3 text-destructive">
+                <div className="w-1.5 h-1.5 rounded-full bg-destructive" />
+                <p className="text-sm font-medium">{error}</p>
+              </div>
+            )}
+
+            {loading ? (
+              <PostsLoading />
+            ) : posts.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+                  {posts.map((post, index) => (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      priority={index === 0 && currentPage === 1}
+                    />
+                  ))}
+                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={pagination.totalPages}
+                  onPageChange={handlePageChange}
+                  hasNext={pagination.hasNext}
+                  hasPrevious={pagination.hasPrevious}
+                />
+              </>
+            ) : (
+              <div className="py-24 text-center">
+                <div className="w-16 h-16 rounded-full bg-muted/30 flex items-center justify-center mx-auto mb-6">
+                  <Search className="w-8 h-8 text-muted-foreground/50" />
+                </div>
+                <h3 className="text-xl font-medium mb-2">포스트를 찾을 수 없습니다</h3>
+                <p className="text-muted-foreground mb-6">
+                  검색어 또는 필터를 변경하여 다시 시도해보세요.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchTerm('')
+                    setSelectedCategory('all')
+                  }}
+                >
+                  필터 초기화
+                </Button>
+              </div>
+            )}
+          </div>
+        </section>
+      </main>
 
       <Footer />
     </div>

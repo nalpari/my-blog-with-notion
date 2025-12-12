@@ -256,14 +256,14 @@ export function TagCloudCard({ tags, maxTags = 30 }: TagCloudCardProps) {
   }, [tags, maxTags])
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
-      <div className="p-6 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10">
-        <h2 className="text-lg font-semibold">태그 클라우드</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          크기가 클수록 많은 포스트가 있습니다
+    <div className="rounded-3xl border border-border/50 bg-card/30 backdrop-blur-xl overflow-hidden shadow-sm">
+      <div className="p-6 border-b border-border/50 bg-muted/30">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Topics Cloud</h2>
+        <p className="mt-1 text-xs text-muted-foreground/80">
+          Visual representation of all topics
         </p>
       </div>
-      
+
       <div className="p-6">
         <EnhancedTagCloud tags={displayTags} />
       </div>

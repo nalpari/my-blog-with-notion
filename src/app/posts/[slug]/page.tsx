@@ -10,10 +10,12 @@ import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { ScrollToTopButton } from '@/components/scroll-to-top-button'
 import { CommentsSection } from '@/components/comments/CommentsSection'
+import { Badge } from '@/components/ui/badge'
 
 import { POSTS_CONFIG } from '@/config/constants'
 import { MESSAGES } from '@/config/messages'
 import { calculateWordCount, calculateReadingTimeFromText } from '@/lib/word-count'
+import { Clock, Calendar, Type } from 'lucide-react'
 
 interface PostPageProps {
   params: Promise<{
@@ -57,7 +59,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
   // 포스트 콘텐츠 가져오기
   const content = await getPostBlocks(post.id)
-  
+
   // 실제 content 기반으로 읽기 시간과 단어 수 계산
   const wordCount = content ? calculateWordCount(content) : POSTS_CONFIG.DEFAULT_WORD_COUNT
   const readingTime = content ? calculateReadingTimeFromText(content) : post.readingTime
@@ -65,43 +67,49 @@ export default async function PostPage({ params }: PostPageProps) {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto mt-16 lg:mt-32 xl:relative px-4 sm:px-6 lg:px-8">
+
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 mt-24 mb-24 max-w-4xl">
         <article>
-          <header className="flex flex-col">
-            {/* 작성자 정보와 메타 정보 */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-              {/* Author 정보 */}
-              <div className="flex items-center gap-3">
+          <header className="mb-16 text-center">
+            {/* 카테고리 & 태그 */}
+            <div className="flex flex-wrap justify-center gap-2 mb-6">
+              {post.category && (
+                <Badge variant="secondary" className="px-3 py-1 text-sm bg-accent/10 text-accent hover:bg-accent/20 border-0">
+                  {post.category.name}
+                </Badge>
+              )}
+              {post.tags && post.tags.map((tag) => (
+                <Badge key={tag.id} variant="outline" className="text-muted-foreground border-border/50">
+                  {tag.name}
+                </Badge>
+              ))}
+            </div>
+
+            {/* 제목 */}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-8 leading-tight">
+              {post.title}
+            </h1>
+
+            {/* 메타 정보 */}
+            <div className="flex flex-wrap items-center justify-center gap-y-2 gap-x-6 text-sm text-muted-foreground border-y border-border/40 py-6">
+              <div className="flex items-center gap-2">
                 {post.author?.avatar ? (
                   <Image
                     src={post.author.avatar}
                     alt={post.author.name || 'Author'}
-                    width={40}
-                    height={40}
+                    width={24}
+                    height={24}
                     className="rounded-full"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center">
-                    <span className="text-zinc-400 font-medium">
-                      {(post.author?.name || POSTS_CONFIG.DEFAULT_AUTHOR).charAt(0).toUpperCase()}
-                    </span>
+                  <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-xs">
+                    {(post.author?.name || POSTS_CONFIG.DEFAULT_AUTHOR).charAt(0).toUpperCase()}
                   </div>
                 )}
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-zinc-200">
-                    {post.author?.name || POSTS_CONFIG.DEFAULT_AUTHOR}
-                  </span>
-                  {post.author?.email && (
-                    <span className="text-xs text-zinc-500">{post.author.email}</span>
-                  )}
-                </div>
+                <span className="font-medium text-foreground">{post.author?.name || POSTS_CONFIG.DEFAULT_AUTHOR}</span>
               </div>
-              
-              {/* 구분선 */}
-              <div className="hidden sm:block w-px h-8 bg-zinc-700"></div>
-              
-              {/* 메타 정보 */}
-              <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-400 dark:text-zinc-500">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-4 h-4" />
                 <time dateTime={post.publishedAt}>
                   {new Date(post.publishedAt).toLocaleDateString('ko-KR', {
                     year: 'numeric',
@@ -109,42 +117,26 @@ export default async function PostPage({ params }: PostPageProps) {
                     day: 'numeric',
                   })}
                 </time>
-                <span>•</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-4 h-4" />
                 <span>{readingTime}{MESSAGES.READING_TIME}</span>
-                <span>•</span>
+              </div>
+              <div className="hidden sm:flex items-center gap-1.5">
+                <Type className="w-4 h-4" />
                 <span>{wordCount.toLocaleString()} {MESSAGES.WORD_COUNT}</span>
               </div>
             </div>
-
-            {/* 제목 - 더 크게 */}
-            <h1 className="mt-6 text-5xl font-bold tracking-tight text-zinc-100 dark:text-zinc-100 sm:text-6xl leading-tight">
-              {post.title}
-            </h1>
-
-            {/* 카테고리 태그들 - 어두운 배경 */}
-            {(post.category || (post.tags && post.tags.length > 0)) && (
-              <div className="mt-6 flex flex-wrap gap-3">
-                {post.category && (
-                  <span className="bg-zinc-800 text-white px-4 py-2 rounded text-sm font-medium">
-                    {post.category.name}
-                  </span>
-                )}
-                {post.tags &&
-                  post.tags.length > 0 &&
-                  post.tags.map((tag) => (
-                    <span
-                      key={tag.id}
-                      className="bg-transparent border border-zinc-600 text-zinc-300 px-4 py-2 rounded text-sm font-medium"
-                    >
-                      {tag.name}
-                    </span>
-                  ))}
-              </div>
-            )}
           </header>
 
           <div
-            className="mt-8 pb-[100px] prose prose-sm prose-zinc dark:prose-invert max-w-none text-zinc-600 dark:text-zinc-300 leading-7"
+            className="prose prose-zinc dark:prose-invert max-w-none 
+              prose-headings:font-semibold prose-headings:tracking-tight 
+              prose-a:text-accent prose-a:no-underline hover:prose-a:underline
+              prose-pre:bg-zinc-900/95 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-xl
+              prose-img:rounded-xl prose-img:shadow-md
+              prose-blockquote:border-l-accent prose-blockquote:bg-accent/5 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:not-italic
+              leading-8 text-lg text-zinc-600 dark:text-zinc-300"
             data-mdx-content
           >
             <ReactMarkdown
@@ -155,104 +147,64 @@ export default async function PostPage({ params }: PostPageProps) {
                   const { inline, className, children } = props
                   const match = /language-(\w+)/.exec(className || '')
                   return !inline && match ? (
-                    <SyntaxHighlighter
-                      style={oneDark}
-                      language={match[1]}
-                      PreTag="div"
-                      className="rounded-lg"
-                    >
-                      {String(children).replace(/\n$/, '')}
-                    </SyntaxHighlighter>
+                    <div className="relative group">
+                      <SyntaxHighlighter
+                        style={oneDark}
+                        language={match[1]}
+                        PreTag="div"
+                        className="!m-0 !rounded-xl !bg-zinc-900/95"
+                        showLineNumbers={true}
+                      >
+                        {String(children).replace(/\n$/, '')}
+                      </SyntaxHighlighter>
+                    </div>
                   ) : (
-                    <code className={className}>{children}</code>
+                    <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-foreground font-medium border border-border/50">{children}</code>
                   )
                 },
-                h1: ({ children }) => (
-                  <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-8 mb-4">
-                    {children}
-                  </h1>
-                ),
-                h2: ({ children }) => (
-                  <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mt-6 mb-3">
-                    {children}
-                  </h2>
-                ),
-                h3: ({ children }) => (
-                  <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100 mt-4 mb-2">
-                    {children}
-                  </h3>
-                ),
-                p: ({ children }) => (
-                  <p className="mb-4 text-zinc-600 dark:text-zinc-300 leading-7">
-                    {children}
-                  </p>
-                ),
-                ul: ({ children }) => (
-                  <ul className="list-disc list-inside mb-4 text-zinc-600 dark:text-zinc-300">
-                    {children}
-                  </ul>
-                ),
-                ol: ({ children }) => (
-                  <ol className="list-decimal list-inside mb-4 text-zinc-600 dark:text-zinc-300">
-                    {children}
-                  </ol>
-                ),
-                li: ({ children }) => <li className="mb-1">{children}</li>,
-                blockquote: ({ children }) => (
-                  <blockquote className="border-l-4 border-accent pl-4 italic text-zinc-500 dark:text-zinc-400 my-4">
-                    {children}
-                  </blockquote>
-                ),
-                a: ({ href, children }) => (
-                  <a
-                    href={href}
-                    className="text-accent hover:text-accent/80 underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {children}
-                  </a>
+                img: ({ src, alt }) => (
+                  <figure className="my-10">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={typeof src === 'string' ? src : ''}
+                      alt={alt || ''}
+                      className="w-full h-auto rounded-xl border border-border/40 shadow-sm"
+                      loading="lazy"
+                    />
+                    {alt && <figcaption className="text-center text-sm text-muted-foreground mt-3">{alt}</figcaption>}
+                  </figure>
                 ),
                 table: ({ children }) => (
-                  <div className="overflow-x-auto mb-6 rounded-lg border border-zinc-200 dark:border-zinc-700 shadow-sm">
-                    <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
+                  <div className="overflow-x-auto my-8 rounded-lg border border-border/40">
+                    <table className="min-w-full divide-y divide-border/40">
                       {children}
                     </table>
                   </div>
                 ),
                 thead: ({ children }) => (
-                  <thead className="bg-zinc-50 dark:bg-zinc-800/50">
+                  <thead className="bg-muted/50">
                     {children}
                   </thead>
                 ),
                 tbody: ({ children }) => (
-                  <tbody className="bg-white dark:bg-zinc-900 divide-y divide-zinc-200 dark:divide-zinc-700">
+                  <tbody className="divide-y divide-border/40 bg-card">
                     {children}
                   </tbody>
                 ),
                 tr: ({ children }) => (
-                  <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors">
+                  <tr className="hover:bg-muted/30 transition-colors">
                     {children}
                   </tr>
                 ),
                 th: ({ children }) => (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     {children}
                   </th>
                 ),
                 td: ({ children }) => (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                     {children}
                   </td>
-                ),
-                img: ({ src, alt }) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={typeof src === 'string' ? src : ''}
-                    alt={alt || ''}
-                    className="w-full h-auto max-w-full rounded-lg my-6 object-cover"
-                    loading="lazy"
-                  />
                 ),
               }}
             >
@@ -260,10 +212,12 @@ export default async function PostPage({ params }: PostPageProps) {
             </ReactMarkdown>
           </div>
 
-          {/* Comments Section */}
-          <CommentsSection postSlug={slug} />
+          <div className="mt-20 pt-10 border-t border-border/40">
+            <CommentsSection postSlug={slug} />
+          </div>
         </article>
-      </div>
+      </main>
+
       <ScrollToTopButton />
       <Footer />
     </div>

@@ -12,90 +12,72 @@ interface TagHeroSectionProps {
   description?: string
 }
 
+// ... imports
+
 export function TagHeroSection({ tag, postCount, description }: TagHeroSectionProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-muted/30 shadow-xl"
+      className="relative overflow-hidden rounded-3xl border border-border/50 bg-card/30 shadow-2xl shadow-primary/5 backdrop-blur-xl"
     >
-      <div className="absolute inset-0 bg-grid-pattern opacity-5" />
-      
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 opacity-50" />
+      {/* Subtle Background Pattern */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-[0.03]" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
       <div className="relative z-10 p-8 md:p-12">
         <Link
           href="/tags"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+          className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-8 group"
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          모든 태그
+          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </div>
+          Back to all topics
         </Link>
 
-        <div className="space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center gap-4">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: 'spring' }}
-            >
-              <TagBadge tag={tag} size="lg" className="text-2xl px-6 py-3" />
-            </motion.div>
+        <div className="flex flex-col md:flex-row gap-8 items-start md:items-center">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="flex-shrink-0"
+          >
+            <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10 flex items-center justify-center shadow-inner">
+              <span className="text-4xl">#</span>
+            </div>
+          </motion.div>
 
-            <div className="flex-1">
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+          <div className="space-y-4 max-w-2xl">
+            <div className="space-y-2">
+              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
                 {tag.name}
               </h1>
-              
-              <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2 2 0 00-2-2h-2"
-                    />
-                  </svg>
-                  <span className="font-semibold text-foreground">{postCount}</span>
-                  <span>개의 포스트</span>
-                </div>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold border border-primary/10">
+                  Topic
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {postCount} articles found
+                </span>
               </div>
             </div>
-          </div>
 
-          {description && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="text-lg text-muted-foreground max-w-2xl"
-            >
-              {description}
-            </motion.p>
-          )}
+            {description ? (
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                {description}
+              </p>
+            ) : (
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                Browse all articles and insights related to <span className="font-medium text-foreground">{tag.name}</span>.
+              </p>
+            )}
+          </div>
         </div>
       </div>
-
-      <div className="absolute bottom-0 right-0 w-64 h-64 bg-gradient-to-tl from-primary/20 to-transparent rounded-tl-full blur-3xl" />
     </motion.div>
   )
 }
@@ -118,12 +100,12 @@ export function RelatedTagsCard({ tags, maxTags = 8 }: RelatedTagsCardProps) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, delay: 0.3 }}
-      className="rounded-xl border border-border bg-card/50 backdrop-blur-sm overflow-hidden shadow-sm"
+      className="rounded-3xl border border-border/50 bg-card/30 backdrop-blur-xl overflow-hidden shadow-sm"
     >
-      <div className="p-6 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10">
-        <h2 className="text-lg font-semibold">연관 태그</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          함께 자주 사용되는 태그
+      <div className="p-6 border-b border-border/50 bg-muted/30">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Related Topics</h2>
+        <p className="mt-1 text-xs text-muted-foreground/80">
+          Frequently used together
         </p>
       </div>
 
@@ -148,7 +130,7 @@ export function RelatedTagsCard({ tags, maxTags = 8 }: RelatedTagsCardProps) {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
                   {(() => {
@@ -173,7 +155,7 @@ export function RelatedTagsCard({ tags, maxTags = 8 }: RelatedTagsCardProps) {
                     )
                   })()}
                 </div>
-                
+
                 <svg
                   className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform"
                   fill="none"
@@ -217,12 +199,12 @@ export function TopPostsCard({ posts, maxPosts = 5 }: TopPostsCardProps) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, delay: 0.4 }}
-      className="rounded-xl border border-border bg-card/50 backdrop-blur-sm overflow-hidden shadow-sm"
+      className="rounded-3xl border border-border/50 bg-card/30 backdrop-blur-xl overflow-hidden shadow-sm"
     >
-      <div className="p-6 border-b border-border bg-gradient-to-r from-secondary/5 to-secondary/10">
-        <h2 className="text-lg font-semibold">인기 포스트</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          이 태그의 추천 포스트
+      <div className="p-6 border-b border-border/50 bg-muted/30">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Popular Articles</h2>
+        <p className="mt-1 text-xs text-muted-foreground/80">
+          Must-read posts in this topic
         </p>
       </div>
 

@@ -1,32 +1,40 @@
 import { Button } from '@/components/ui/button'
+import { Github } from 'lucide-react'
 
 const Footer = () => {
   return (
-    <footer className="pt-[62px] pb-12 sm:pt-[66px] sm:pb-16 lg:pt-[70px] lg:pb-20 border-t border-border/40">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center">
-              <span className="text-accent-foreground font-bold text-sm">
+    <footer className="border-t border-border/50 bg-background/50 backdrop-blur-sm">
+      <div className="container mx-auto px-6 py-12 md:py-16">
+        <div className="grid md:grid-cols-2 gap-8 items-start">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 rounded bg-foreground text-background flex items-center justify-center font-bold text-xs">
                 B
-              </span>
+              </div>
+              <span className="font-semibold text-lg tracking-tight">Blog</span>
             </div>
-            <span className="font-semibold text-lg">Blog</span>
+            <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
+              모던한 웹 개발에 대한 인사이트를 공유하는 개발자 블로그입니다.
+              Linear Design System의 철학을 담아 간결하고 명확한 콘텐츠를 전달합니다.
+            </p>
           </div>
-          <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-            모던한 웹 개발에 대한 인사이트를 공유하는 개발자 블로그입니다.
-          </p>
-          <div className="flex justify-center space-x-4">
-            <Button variant="ghost" size="sm">
-              GitHub
+
+          <div className="flex justify-start md:justify-end gap-6">
+            <Button variant="outline" size="sm" className="h-9 px-4 gap-2 text-muted-foreground hover:text-foreground border-border/50 bg-background/50" asChild>
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer">
+                <Github className="w-4 h-4" />
+                <span>GitHub</span>
+              </a>
             </Button>
           </div>
         </div>
 
-        <div className="border-t border-border/40 mt-8 pt-8 text-center text-sm text-muted-foreground">
+        <div className="border-t border-border/50 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
           <p>
-            © 2024 Blog. Linear Design System을 기반으로 Claude Code를 이용한
-            vibe coding으로 제작되었습니다.
+            © 2024 Blog. All rights reserved.
+          </p>
+          <p>
+            Powered by Notion & Supabase
           </p>
         </div>
       </div>

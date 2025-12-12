@@ -53,7 +53,7 @@ export const ScrollToTopButton = () => {
       onClick={handleScrollToTop}
       onKeyDown={handleKeyDown}
       className={
-        'fixed bottom-8 right-8 z-50 h-12 w-12 rounded-full bg-zinc-800 text-white shadow-lg transition-all duration-300 hover:bg-zinc-700 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 dark:bg-zinc-700 dark:hover:bg-zinc-600'
+        'fixed bottom-8 right-8 z-50 h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 backdrop-blur-sm'
       }
       size="icon"
       aria-label="페이지 상단으로 이동"
