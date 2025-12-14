@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -16,33 +15,37 @@ import type { Post } from '@/types/notion'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { PostCard } from '@/components/post-card'
-import { Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+  Search,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+} from 'lucide-react'
 import { POSTS_CONFIG } from '@/config/constants'
 
 // 로딩 컴포넌트
 function PostsLoading() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
       {[1, 2, 3, 4, 5, 6].map((i) => (
-        <Card key={i} className="overflow-hidden p-0">
-          <div className="relative h-48 w-full bg-muted animate-pulse" />
-          <CardHeader className="p-6 pb-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-4 w-20 bg-muted animate-pulse rounded" />
-              <span>•</span>
-              <div className="h-6 w-16 bg-muted animate-pulse rounded" />
+        <div
+          key={i}
+          className="rounded-2xl border border-border/50 bg-card overflow-hidden"
+        >
+          <div className="aspect-[16/10] bg-muted animate-shimmer" />
+          <div className="p-5 sm:p-6 space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="h-4 w-20 bg-muted animate-shimmer rounded-lg" />
+              <div className="h-4 w-16 bg-muted animate-shimmer rounded-lg" />
             </div>
-            <div className="h-6 w-full bg-muted animate-pulse rounded mb-2" />
-            <div className="h-4 w-full bg-muted animate-pulse rounded" />
-            <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
-          </CardHeader>
-          <CardContent className="px-6 pb-6">
-            <div className="flex items-center justify-between">
-              <div className="h-4 w-16 bg-muted animate-pulse rounded" />
-              <div className="h-8 w-16 bg-muted animate-pulse rounded" />
+            <div className="h-6 w-full bg-muted animate-shimmer rounded-lg" />
+            <div className="space-y-2">
+              <div className="h-4 w-full bg-muted animate-shimmer rounded-lg" />
+              <div className="h-4 w-3/4 bg-muted animate-shimmer rounded-lg" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ))}
     </div>
   )
@@ -66,58 +69,50 @@ function Pagination({
 }: PaginationProps) {
   const getPageNumbers = () => {
     const pages = []
-    const maxVisible = 5
-    const half = Math.floor(maxVisible / 2)
-
-    let start = Math.max(1, currentPage - half)
-    const end = Math.min(totalPages, start + maxVisible - 1)
-
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(1, end - maxVisible + 1)
-    }
-
-    for (let i = start; i <= end; i++) {
+    // 전체 페이지 번호를 모두 반환
+    for (let i = 1; i <= totalPages; i++) {
       pages.push(i)
     }
-
     return pages
   }
 
   if (totalPages <= 1) return null
 
   return (
-    <div className="flex items-center justify-center gap-2 mt-12">
+    <div className="flex items-center justify-center gap-2 mt-16">
       <Button
         variant="outline"
         size="sm"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={hasPrevious !== undefined ? !hasPrevious : currentPage === 1}
-        className="gap-1"
+        className="gap-1.5"
       >
         <ChevronLeft className="h-4 w-4" />
-        이전
+        <span className="hidden sm:inline">이전</span>
       </Button>
 
-      {getPageNumbers().map((page) => (
-        <Button
-          key={page}
-          variant={currentPage === page ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => onPageChange(page)}
-          className="min-w-[40px]"
-        >
-          {page}
-        </Button>
-      ))}
+      <div className="flex items-center gap-1">
+        {getPageNumbers().map((page) => (
+          <Button
+            key={page}
+            variant={currentPage === page ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => onPageChange(page)}
+            className="min-w-[40px]"
+          >
+            {page}
+          </Button>
+        ))}
+      </div>
 
       <Button
         variant="outline"
         size="sm"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={hasNext !== undefined ? !hasNext : currentPage === totalPages}
-        className="gap-1"
+        className="gap-1.5"
       >
-        다음
+        <span className="hidden sm:inline">다음</span>
         <ChevronRight className="h-4 w-4" />
       </Button>
     </div>
@@ -146,7 +141,7 @@ const getCacheKey = (page: number, search: string, category: string) => {
   return `posts_cache_${page}_${search}_${category}`
 }
 
-// 커서 캐시 키 생성 함수  
+// 커서 캐시 키 생성 함수
 const getCursorCacheKey = (search: string, category: string) => {
   return `cursor_map_${search}_${category}`
 }
@@ -170,7 +165,10 @@ const getCachedData = (key: string) => {
 }
 
 // 커서 매핑 정보 가져오기
-const getCursorMap = (search: string, category: string): Map<number, string> => {
+const getCursorMap = (
+  search: string,
+  category: string,
+): Map<number, string> => {
   try {
     const key = getCursorCacheKey(search, category)
     const cached = sessionStorage.getItem(key)
@@ -189,7 +187,11 @@ const getCursorMap = (search: string, category: string): Map<number, string> => 
 }
 
 // 커서 매핑 정보 저장
-const saveCursorMap = (search: string, category: string, cursorMap: Map<number, string>) => {
+const saveCursorMap = (
+  search: string,
+  category: string,
+  cursorMap: Map<number, string>,
+) => {
   try {
     const key = getCursorCacheKey(search, category)
     sessionStorage.setItem(
@@ -339,7 +341,7 @@ export function PostsListPage() {
           setPosts(data.posts)
           setPagination(data.pagination)
           setError(null)
-          
+
           // 커서 정보 업데이트
           if (data.pagination.nextCursor && page > 0) {
             const newCursorMap = getCursorMap(search, category)
@@ -348,7 +350,7 @@ export function PostsListPage() {
             setCursorMap(newCursorMap)
             saveCursorMap(search, category, newCursorMap)
           }
-          
+
           // 데이터 캐싱
           setCachedData(cacheKey, data.posts, data.pagination)
         }
@@ -478,64 +480,76 @@ export function PostsListPage() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <section className="py-12 sm:py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          {/* 헤더 */}
-          <div className="mb-8 sm:mb-12">
-            <h1 className="text-3xl sm:text-4xl font-bold mb-4">모든 포스트</h1>
-            <p className="text-muted-foreground text-base sm:text-lg">
+      {/* Hero Section */}
+      <section className="relative py-16 lg:py-24 border-b border-border/50">
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute top-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl opacity-30" />
+        </div>
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="max-w-2xl">
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
+              모든 포스트
+            </h1>
+            <p className="text-lg text-muted-foreground">
               개발과 기술에 대한 모든 인사이트를 확인해보세요
             </p>
           </div>
+        </div>
+      </section>
 
-          {/* 검색 및 필터 */}
-          <div className="mb-8 flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+      {/* Filters Section */}
+      <section className="py-8 border-b border-border/50 bg-muted/20 sticky top-[72px] z-40 backdrop-blur-xl">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            {/* 검색 */}
+            <div className="relative flex-1 max-w-md w-full">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 type="text"
-                placeholder="포스트 제목이나 내용으로 검색..."
+                placeholder="포스트 검색..."
                 value={searchTerm}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-10"
+                className="pl-11 h-11 rounded-xl bg-background border-border/50"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select
-                value={selectedCategory}
-                onValueChange={handleCategoryChange}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="카테고리 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 카테고리</SelectItem>
-                  {allCategories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+            {/* 필터 및 카운트 */}
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              {!loading && (
+                <span className="text-sm text-muted-foreground whitespace-nowrap">
+                  {pagination.totalPosts}개의 포스트
+                </span>
+              )}
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+                <Select
+                  value={selectedCategory}
+                  onValueChange={handleCategoryChange}
+                >
+                  <SelectTrigger className="w-[160px] h-11 rounded-xl bg-background border-border/50">
+                    <SelectValue placeholder="카테고리" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">모든 카테고리</SelectItem>
+                    {allCategories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* 결과 카운트 */}
-          {!loading && (
-            <div className="mb-6">
-              <p className="text-sm text-muted-foreground">
-                총 {pagination.totalPosts}개의 포스트
-                {searchTerm && (
-                  <span> (&apos;{searchTerm}&apos; 검색 결과)</span>
-                )}
-              </p>
-            </div>
-          )}
-
+      {/* Posts Section */}
+      <section className="py-12 lg:py-16">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12">
           {/* 에러 메시지 표시 */}
           {error && (
-            <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <div className="mb-8 p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
               <p className="text-destructive font-medium">
                 오류가 발생했습니다
               </p>
@@ -547,24 +561,14 @@ export function PostsListPage() {
           {loading ? (
             <PostsLoading />
           ) : error ? (
-            <div className="text-center py-12">
-              <div className="text-muted-foreground mb-4">
-                <svg
-                  className="w-16 h-16 mx-auto mb-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+            <div className="text-center py-20">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-destructive/10 flex items-center justify-center">
+                <FileText className="w-10 h-10 text-destructive/50" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">
+              <h3 className="text-xl font-semibold mb-2">
                 포스트를 불러올 수 없습니다
               </h3>
-              <p className="text-muted-foreground mb-4">
+              <p className="text-muted-foreground mb-6">
                 잠시 후 다시 시도해주세요.
               </p>
               <Button
@@ -579,13 +583,18 @@ export function PostsListPage() {
             </div>
           ) : posts.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
                 {posts.map((post, index) => (
-                  <PostCard
+                  <div
                     key={post.id}
-                    post={post}
-                    priority={index === 0 && currentPage === 1}
-                  />
+                    className="animate-fade-up"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <PostCard
+                      post={post}
+                      priority={index < 3 && currentPage === 1}
+                    />
+                  </div>
                 ))}
               </div>
               <Pagination
@@ -597,26 +606,16 @@ export function PostsListPage() {
               />
             </>
           ) : (
-            <div className="text-center py-12">
-              <div className="text-muted-foreground mb-4">
-                <svg
-                  className="w-16 h-16 mx-auto mb-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+            <div className="text-center py-20">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-muted flex items-center justify-center">
+                <FileText className="w-10 h-10 text-muted-foreground/50" />
               </div>
               {searchTerm || selectedCategory !== 'all' ? (
                 <>
-                  <h3 className="text-lg font-semibold mb-2">
+                  <h3 className="text-xl font-semibold mb-2">
                     검색 결과가 없습니다
                   </h3>
-                  <p className="text-muted-foreground mb-4">
+                  <p className="text-muted-foreground mb-6">
                     다른 검색어나 카테고리를 시도해보세요.
                   </p>
                   <Button
@@ -631,7 +630,7 @@ export function PostsListPage() {
                 </>
               ) : (
                 <>
-                  <h3 className="text-lg font-semibold mb-2">
+                  <h3 className="text-xl font-semibold mb-2">
                     아직 게시된 포스트가 없습니다
                   </h3>
                   <p className="text-muted-foreground">

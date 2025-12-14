@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import Link from 'next/link'
 import type { Post } from '@/types/notion'
 import { PostCard } from '@/components/post-card'
 import { PostsLoading } from '@/components/posts/PostsLoading'
@@ -116,33 +115,16 @@ export function HomeClient() {
   }
 
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {posts.map((post: Post, index: number) => (
-          <PostCard key={post.id} post={post} priority={index === 0} />
-        ))}
-      </div>
-
-      <div className="text-center mt-12">
-        <Button variant="outline" size="lg" className="gap-2" asChild>
-          <Link href="/posts">
-            모든 포스트 보기
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </Link>
-        </Button>
-      </div>
-    </>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+      {posts.map((post: Post, index: number) => (
+        <div
+          key={post.id}
+          className="animate-fade-up"
+          style={{ animationDelay: `${index * 100}ms` }}
+        >
+          <PostCard post={post} priority={index < 3} />
+        </div>
+      ))}
+    </div>
   )
 }
