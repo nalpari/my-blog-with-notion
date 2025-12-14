@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Plus_Jakarta_Sans, Crimson_Pro } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from 'next-themes'
 import { ProgressBarProvider } from '@/components/progress-bar-provider'
@@ -7,10 +7,18 @@ import { ToastProvider } from '@/components/ui/toast-provider'
 import { AuthModalProvider } from '@/contexts/AuthModalContext'
 import { GlobalAuthModal } from '@/components/auth/GlobalAuthModal'
 
-const inter = Inter({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-sans',
   display: 'swap',
+  weight: ['300', '400', '500', '600', '700', '800'],
+})
+
+const crimsonPro = Crimson_Pro({
+  subsets: ['latin'],
+  variable: '--font-serif',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
 })
 
 export const metadata: Metadata = {
@@ -69,7 +77,7 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
-      className={`${inter.variable} dark`}
+      className={`${plusJakarta.variable} ${crimsonPro.variable}`}
       suppressHydrationWarning
     >
       <head>
