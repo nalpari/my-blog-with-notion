@@ -15,7 +15,13 @@ import type { Post } from '@/types/notion'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { PostCard } from '@/components/post-card'
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, FileText } from 'lucide-react'
+import {
+  Search,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+} from 'lucide-react'
 import { POSTS_CONFIG } from '@/config/constants'
 
 // 로딩 컴포넌트
@@ -23,7 +29,10 @@ function PostsLoading() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
       {[1, 2, 3, 4, 5, 6].map((i) => (
-        <div key={i} className="rounded-2xl border border-border/50 bg-card overflow-hidden">
+        <div
+          key={i}
+          className="rounded-2xl border border-border/50 bg-card overflow-hidden"
+        >
           <div className="aspect-[16/10] bg-muted animate-shimmer" />
           <div className="p-5 sm:p-6 space-y-4">
             <div className="flex items-center gap-4">
@@ -60,20 +69,10 @@ function Pagination({
 }: PaginationProps) {
   const getPageNumbers = () => {
     const pages = []
-    const maxVisible = 5
-    const half = Math.floor(maxVisible / 2)
-
-    let start = Math.max(1, currentPage - half)
-    const end = Math.min(totalPages, start + maxVisible - 1)
-
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(1, end - maxVisible + 1)
-    }
-
-    for (let i = start; i <= end; i++) {
+    // 전체 페이지 번호를 모두 반환
+    for (let i = 1; i <= totalPages; i++) {
       pages.push(i)
     }
-
     return pages
   }
 
@@ -166,7 +165,10 @@ const getCachedData = (key: string) => {
 }
 
 // 커서 매핑 정보 가져오기
-const getCursorMap = (search: string, category: string): Map<number, string> => {
+const getCursorMap = (
+  search: string,
+  category: string,
+): Map<number, string> => {
   try {
     const key = getCursorCacheKey(search, category)
     const cached = sessionStorage.getItem(key)
@@ -185,7 +187,11 @@ const getCursorMap = (search: string, category: string): Map<number, string> => 
 }
 
 // 커서 매핑 정보 저장
-const saveCursorMap = (search: string, category: string, cursorMap: Map<number, string>) => {
+const saveCursorMap = (
+  search: string,
+  category: string,
+  cursorMap: Map<number, string>,
+) => {
   try {
     const key = getCursorCacheKey(search, category)
     sessionStorage.setItem(
@@ -544,7 +550,9 @@ export function PostsListPage() {
           {/* 에러 메시지 표시 */}
           {error && (
             <div className="mb-8 p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
-              <p className="text-destructive font-medium">오류가 발생했습니다</p>
+              <p className="text-destructive font-medium">
+                오류가 발생했습니다
+              </p>
               <p className="text-sm text-destructive/80 mt-1">{error}</p>
             </div>
           )}
