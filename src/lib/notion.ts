@@ -52,6 +52,25 @@ const notion = new Client({
 // Notion to Markdown 변환기
 const n2m = new NotionToMarkdown({ notionClient: notion })
 
+// 이미지 블록 커스텀 트랜스포머: 프록시 URL로 변환
+// 노션의 file 타입 이미지 URL은 1시간 후 만료되므로 프록시 API를 통해 실시간으로 가져옴
+n2m.setCustomTransformer('image', async (block) => {
+  const blockId = block.id
+
+  // 이미지 블록에서 캡션 추출
+  const imageBlock = block as {
+    id: string
+    image?: {
+      caption?: Array<{ plain_text: string }>
+    }
+  }
+
+  const caption = imageBlock.image?.caption?.[0]?.plain_text || 'image'
+
+  // 프록시 URL로 변환
+  return `![${caption}](/api/notion-image/${blockId})`
+})
+
 // 데이터베이스 ID
 const DATABASE_ID = process.env.NOTION_DATABASE_ID!
 

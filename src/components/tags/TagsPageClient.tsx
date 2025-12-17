@@ -3,7 +3,6 @@
 import * as React from 'react'
 import { useTags } from '@/hooks/useTags'
 import { TagCloud, TagHeader } from '@/components/tags/TagCloud'
-import { PostsLoading } from '@/components/posts/PostsLoading'
 
 /**
  * Editorial-style Tags Page Client Component
