@@ -30,7 +30,7 @@ export function PostCard({ post, priority = false }: PostCardProps) {
           <div className="relative aspect-[16/10] overflow-hidden bg-muted">
             {post.coverImage ? (
               <Image
-                src={post.coverImage}
+                src={`/api/cover-image/${post.id}`}
                 alt={post.title}
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
