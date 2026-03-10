@@ -33,9 +33,28 @@ export async function generateMetadata({
     }
   }
 
+  const ogImages = post.coverImage
+    ? [{ url: `/api/cover-image/${post.id}`, width: 1200, height: 630, alt: post.title }]
+    : []
+
   return {
     title: post.title,
     description: post.excerpt || 'Blog post',
+    openGraph: {
+      title: post.title,
+      description: post.excerpt || 'Blog post',
+      type: 'article',
+      publishedTime: post.publishedAt,
+      authors: post.author?.name ? [post.author.name] : undefined,
+      tags: post.tags?.map((tag) => tag.name),
+      images: ogImages,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.excerpt || 'Blog post',
+      images: ogImages.map((img) => img.url),
+    },
   }
 }
 

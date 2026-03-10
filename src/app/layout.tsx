@@ -21,7 +21,10 @@ const crimsonPro = Crimson_Pro({
   weight: ['400', '500', '600', '700'],
 })
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: 'Blog - 모던한 개발자 블로그',
     template: '%s | Blog',
