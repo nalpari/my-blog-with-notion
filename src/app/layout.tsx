@@ -6,6 +6,7 @@ import { ProgressBarProvider } from '@/components/progress-bar-provider'
 import { ToastProvider } from '@/components/ui/toast-provider'
 import { AuthModalProvider } from '@/contexts/AuthModalContext'
 import { GlobalAuthModal } from '@/components/auth/GlobalAuthModal'
+import { GoogleAnalytics } from '@next/third-parties/google'
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -22,6 +23,7 @@ const crimsonPro = Crimson_Pro({
 })
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -110,6 +112,7 @@ export default function RootLayout({
           </ToastProvider>
         </ThemeProvider>
       </body>
+      {gaId && <GoogleAnalytics gaId={gaId} />}
     </html>
   )
 }
